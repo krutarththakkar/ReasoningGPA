@@ -2,7 +2,7 @@
 """Minimal API connectivity test."""
 import requests, json, sys
 
-API_KEY  = "sk-qXVlh4PBxTK9rTbmS4SkTQ"
+API_KEY  = "yourkeyhere"
 API_BASE = "https://openai.rc.asu.edu/v1"
 MODEL    = "qwen3-30b-a3b-instruct-2507"
 
