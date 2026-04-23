@@ -1,22 +1,35 @@
+"""
+LLM API wrapper.
+Single responsibility ie. make HTTP calls to the BaseURl.
+No core logic here, just the call, error handling, and rate limiting.
+"""
+
 from __future__ import annotations
+
 import os
 import time
 import requests
+
 API_KEY  = os.getenv("OPENAI_API_KEY", "")
 API_BASE = os.getenv("API_BASE", "https://openai.rc.asu.edu/v1")
 MODEL    = os.getenv("MODEL_NAME", "qwen3-30b-a3b-instruct-2507")
 
+# delay betw calls
 _RATE_SLEEP = 0.3
-_call_count = 0
 
+# Per question call counter (reset by strategies)
+_call_count = 0
 MAX_CALLS_PER_QUESTION = 18  # leave buffer below 20
+
 
 def reset_call_count() -> None:
     global _call_count
     _call_count = 0
 
+
 def get_call_count() -> int:
     return _call_count
+
 
 def call_llm(
     prompt: str,
