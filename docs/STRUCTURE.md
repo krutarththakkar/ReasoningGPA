@@ -5,6 +5,12 @@
 ```
 NLP/
 │
+├── docs/                          # Planning and documentation
+│   ├── PLAN.md                    # Master plan (this project's north star)
+│   ├── STRUCTURE.md               # This file
+│   ├── MILESTONES.md              # Step-by-step build plan
+│   ├── EVALUATION.md              # How we measure progress
+│   └── TECHNIQUES.md              # Deep dive on each technique
 │
 ├── agent/                         # Core agent modules (one file per concern)
 │   ├── __init__.py                # Exports agent_loop()
@@ -32,6 +38,7 @@ NLP/
 ├── eval/                          # Evaluation scripts
 │   ├── run_eval.py                # Main eval runner (configurable)
 │   ├── grader.py                  # Grading logic (exact match + LLM judge)
+│   ├── analyze_failures.py        # Failure analysis tool
 │   └── results/                   # Saved eval results (gitignored)
 │       └── .gitkeep
 │
@@ -113,6 +120,12 @@ def agent_loop(question: str) -> str:
 - First tries exact match after normalization
 - Then tries numeric extraction match
 - Then uses LLM-as-judge (1 extra call)
+
+### `eval/analyze_failures.py`
+- Loads a results JSON
+- Groups failures by domain
+- Shows the top N failure patterns
+- Helps identify what to fix next
 
 ---
 
