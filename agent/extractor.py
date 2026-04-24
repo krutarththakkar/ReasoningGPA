@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import re
 
+from agent.llm import call_llm
+
 
 # words that often start section headers — if a **bold** block starts with
 # one of these, it is almost certainly a header and not the final answer
@@ -35,6 +37,26 @@ def extract_answer(raw: str, domain: str) -> str:
         return ""
 
     text = raw.strip()
+
+    prompt = (
+        f"Given the following reasoning, extract the final answer for the domain '{domain}'.\n"
+        "Output ONLY the exact answer string and absolutely nothing else. "
+        "For math/word_problem, output only the bare number. "
+        "For science_mcq/logic, output only the letter option or short phrase. "
+        "For true_false, output 'Yes' or 'No'. "
+        "If there is no discernible final answer, output NOTHING.\n\n"
+        f"Reasoning:\n{text}"
+    )
+    
+    try:
+        raw_ans = call_llm(prompt, temperature=0.0, max_tokens=50)
+        ans = raw_ans.strip()
+        if ans and len(ans) < 100:
+            cleaned = _domain_clean(ans, domain)
+            if cleaned:
+                return cleaned
+    except Exception:
+        pass
 
     # Priority 1: Explicit "Final answer:" marker
     m = re.search(
