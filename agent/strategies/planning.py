@@ -39,10 +39,15 @@ def planning_strategy(question: str) -> str:
     attack_plan = _solve_attack_feast_problem(question)
     if attack_plan:
         return attack_plan
-
-    question = _final_statement_only(question)
+    is_logistics = "transporting crates" in question.lower()
+    prompt_question = question if is_logistics else _final_statement_only(question)
+    example_note = (
+        "Use earlier [PLAN] blocks only as examples. Output only the final empty [PLAN].\n"
+        if is_logistics else ""
+    )
     prompt = (
-        f"{question}\n\n"
+        f"{prompt_question}\n\n"
+        f"{example_note}"
         "Solve the planning problem step-by-step.\n"
         "At the end, output the plan inside a ```plan block, one action per line, each like (action arg1 arg2 ...).\n"
         "Use exact action names from the problem; do not invent wrapper actions like use.\n"
@@ -288,6 +293,11 @@ def _natural_action(line: str) -> str | None:
         (r"^put down the ([\w\-]+) block$", "(put-down {0})"),
         (r"^unstack the ([\w\-]+) block from on top of the ([\w\-]+) block$", "(unstack {0} {1})"),
         (r"^stack the ([\w\-]+) block on top of the ([\w\-]+) block$", "(stack {0} {1})"),
+        (r"^drive ([\w\-]+) from ([\w\-]+) to ([\w\-]+)$", "(drive {0} {1} {2})"),
+        (r"^use ([\w\-]+) to lift ([\w\-]+) from ([\w\-]+) at ([\w\-]+)$", "(lift {0} {1} {2} {3})"),
+        (r"^use ([\w\-]+) to load ([\w\-]+) into ([\w\-]+) at ([\w\-]+)$", "(load {0} {1} {2} {3})"),
+        (r"^use ([\w\-]+) to unload ([\w\-]+) from ([\w\-]+) at ([\w\-]+)$", "(unload {0} {1} {2} {3})"),
+        (r"^use ([\w\-]+) to drop ([\w\-]+) to ([\w\-]+) at ([\w\-]+)$", "(drop {0} {1} {2} {3})"),
     ]
     for pat, template in patterns:
         match = re.match(pat, line)
