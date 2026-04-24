@@ -51,10 +51,12 @@ def extract_answer(raw: str, domain: str) -> str:
     if m:
         return m.group(1).strip()
 
-    # Priority 3: "Therefore/Thus/So, X"
+    # Priority 3: "Therefore/Thus/So, X" — only scan the tail since the final
+    # answer is always near the end, not mid-reasoning
+    tail = text[-400:]
     m = re.search(
         r"(?:therefore|thus|so|hence),?\s+(?:the\s+)?(?:answer\s+is\s+)?(.+?)(?:\.|$)",
-        text, re.IGNORECASE
+        tail, re.IGNORECASE
     )
     if m:
         candidate = m.group(1).strip().rstrip(".,;")
