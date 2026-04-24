@@ -13,16 +13,6 @@ export API_BASE="https://openai.rc.asu.edu/v1"
 export MODEL_NAME="qwen3-30b-a3b-instruct-2507"
 ```
 
-## Running the Agent on Test Data
-
-```bash
-python generate_answer_template.py
-```
-
-This reads `cse_476_final_project_test_data.json`, runs each question through
-the agent, and writes answers to `cse_476_final_project_answers.json`.
-
-
 ## Agent Architecture
 
 The agent aims to implement 9 inference-time techniques:
