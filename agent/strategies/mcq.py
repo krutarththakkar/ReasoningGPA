@@ -1,39 +1,49 @@
 """
-MCQ strategy — multiple choice questions (science, general knowledge).
+Science MCQ strategy.
 
-Techniques used:
-  - Few-Shot Exemplars (Technique 5)
-  - Chain-of-Thought (Technique 1)
-  - Answer Extraction (Technique 7)
-
-Call budget: 1 call
+Few-shot tends to get a clean letter fast. If not, try a CoT pass. If
+that still didn't give a letter, do a reflection — sometimes the model
+gives the right answer but buries the letter in a paragraph and the
+reflection pass gets it to say just the letter.
 """
 
 from __future__ import annotations
+import re
 
 from agent.llm import reset_call_count
 from agent.techniques.few_shot import few_shot
+from agent.techniques.cot import chain_of_thought
+from agent.techniques.reflection import reflect
 from agent.extractor import extract_answer
 
 
+def _is_letter(s: str) -> bool:
+    return bool(s and re.match(r"^[A-D]$", s.strip()))
+
+
 def mcq_strategy(question: str) -> str:
-    """
-    MCQ strategy:
-    Few-shot CoT → extract letter answer.
-    """
     reset_call_count()
 
-    raw = few_shot(question, "science_mcq")
-    answer = extract_answer(raw, "science_mcq")
+    raw_fs = few_shot(question, "science_mcq")
+    fs_answer = extract_answer(raw_fs, "science_mcq")
+    if _is_letter(fs_answer):
+        return fs_answer.strip().upper()
 
-    # make sure we return just the letter if possible
-    import re
-    if answer and re.match(r"^[A-D]$", answer.strip()):
-        return answer.strip()
+    raw_cot = chain_of_thought(question, "science_mcq")
+    cot_answer = extract_answer(raw_cot, "science_mcq")
+    if _is_letter(cot_answer):
+        return cot_answer.strip().upper()
 
-    # Try to extract letter from longer answer
-    m = re.search(r"\b([A-D])\b", answer or raw)
-    if m:
-        return m.group(1).upper()
+    candidate = fs_answer or cot_answer
+    if candidate:
+        reflected = reflect(question, candidate, "science_mcq")
+        if _is_letter(reflected):
+            return reflected.strip().upper()
 
-    return answer or ""
+    # still no letter — just scan everything for any A-D
+    for text in (fs_answer, cot_answer, raw_fs, raw_cot):
+        m = re.search(r"\b([A-D])\b", text or "")
+        if m:
+            return m.group(1).upper()
+
+    return fs_answer or cot_answer or ""
