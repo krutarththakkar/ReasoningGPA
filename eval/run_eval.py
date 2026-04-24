@@ -200,6 +200,7 @@ def run_eval(
     indices: list[int],
     use_llm_judge: bool = True,
     verbose: bool = True,
+    print_questions: bool = False,
 ) -> dict:
     """Run evaluation on specified indices. Returns results dict."""
     results = []
@@ -245,9 +246,10 @@ def run_eval(
             mark = "✅" if is_correct else "❌"
             running_correct = sum(1 for r in results if r["correct"])
             route_note = f" -> {routed_domain}" if routed_domain != domain else ""
-            print(f"\n[{rank:3d}/{total}] Q: {question}")
+            if print_questions:
+                print(f"\n[{rank:3d}/{total}] Q: {question}")
             print(
-                f"{mark} [{domain:22s}{route_note}] "
+                f"{mark} [{rank:3d}/{total}] [{domain:22s}{route_note}] "
                 f"exp={expected!r:12s} got={prediction!r:25s} "
                 f"({elapsed:.1f}s)"
             )
@@ -299,6 +301,7 @@ def main():
     parser.add_argument("--sample",      type=str,  default=None,  choices=["fixed", "random"], help="'fixed' for stable sample, 'random' for random sample matching routed test mix")
     parser.add_argument("--no-llm-judge",action="store_true",      help="Skip LLM judge (faster, less accurate grading)")
     parser.add_argument("--quiet",       action="store_true",      help="Suppress per-question output")
+    parser.add_argument("--printquestions",action="store_true",    help="Print the full question text in the output")
     args = parser.parse_args()
 
     print(f"Loading dev data from {DEV_PATH}...")
@@ -343,7 +346,7 @@ def main():
     print(f"LLM judge: {'enabled' if use_llm_judge else 'disabled'}")
     print()
 
-    summary = run_eval(dev_data, indices, use_llm_judge=use_llm_judge, verbose=not args.quiet)
+    summary = run_eval(dev_data, indices, use_llm_judge=use_llm_judge, verbose=not args.quiet, print_questions=args.printquestions)
     print_summary(summary)
 
     # Save results
