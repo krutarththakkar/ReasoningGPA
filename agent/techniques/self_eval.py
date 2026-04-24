@@ -6,6 +6,8 @@ Used in eval pipeline and optionally in the agent for math verification.
 
 from __future__ import annotations
 
+import re
+
 from agent.llm import call_llm
 
 _SYSTEM = (
@@ -18,8 +20,7 @@ _SYSTEM = (
 def self_evaluate(question: str, prediction: str, expected: str = "") -> bool:
     """
     Ask the model if the prediction is correct.
-    Returns True if correct, False otherwise.
-    Falls back to string comparison if model gives unexpected output.
+    Returns True if correct, False otherwise (including when the judge's reply is ambiguous).
     """
     if expected:
         prompt = (
@@ -41,15 +42,14 @@ def self_evaluate(question: str, prediction: str, expected: str = "") -> bool:
         prompt,
         system=_SYSTEM,
         temperature=0.0,
-        max_tokens=5,
+        max_tokens=10,
     ).strip().lower()
 
-    if reply.startswith("true"):
-        return True
-    if reply.startswith("false"):
+    # strict word-boundary match — "False" wins over "True" so "not true" etc. aren't false positives
+    if re.search(r"\bfalse\b", reply):
         return False
+    if re.search(r"\btrue\b", reply):
+        return True
 
-    # Fallback: string comparison
-    import re
-    norm = lambda s: re.sub(r"\s+", " ", (s or "").strip().lower())
-    return norm(prediction) == norm(expected)
+    # judge didn't give a clear answer — be conservative, don't inflate scores
+    return False
