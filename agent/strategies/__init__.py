@@ -12,6 +12,7 @@ from agent.strategies.true_false import true_false_strategy
 from agent.strategies.commonsense import commonsense_strategy
 from agent.strategies.coding import coding_strategy
 from agent.strategies.planning import planning_strategy
+from agent.strategies.future_prediction import future_prediction_strategy
 
 _REGISTRY = {
     "math":                   math_strategy,
@@ -28,7 +29,7 @@ _REGISTRY = {
     "common_sense":           commonsense_strategy,
     "coding":                 coding_strategy,
     "planning":               planning_strategy,
-    "future_prediction":      commonsense_strategy,
+    "future_prediction":      future_prediction_strategy,
 }
 
 
