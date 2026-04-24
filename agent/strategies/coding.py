@@ -10,11 +10,11 @@ from agent.llm import call_llm, reset_call_count
 
 _SYSTEM = (
     "You are a careful Python programmer. "
-    "Given a task description, output ONLY the function body. "
-    "No function signature, no imports, no markdown code fences, no explanation. "
-    "Keep the solution short and close to the requested behavior. "
+    "Given a task description, first think step-by-step about the algorithm, edge cases, and logic. "
+    "After your reasoning, output ONLY the indented Python function body inside a ```python code block. "
+    "No function signature, no imports. Keep the solution short and close to the requested behavior. "
     "Do not modernize or improve the task beyond what is asked. "
-    "Every line must be indented with at least 4 spaces."
+    "Every line in the code block must be indented with at least 4 spaces."
 )
 
 
@@ -22,7 +22,8 @@ def coding_strategy(question: str) -> str:
     reset_call_count()
     prompt = (
         f"{question}\n\n"
-        "Return ONLY the indented Python function body that solves this task. "
+        "First, explain your approach step-by-step.\n"
+        "Then, return ONLY the indented Python function body that solves this task inside a ```python block.\n"
         "Use the imports, constants, and parameters from the provided starter code. "
         "Match the examples and requested behavior literally. "
         "Do not replace named APIs with equivalent alternatives. "
@@ -30,10 +31,9 @@ def coding_strategy(question: str) -> str:
         "Do not add extra validation, retries, pagination, logging, printing, "
         "directory creation, comments, or error handling unless the task asks for it. "
         "Do not add None checks or argument guards unless they are requested. "
-        "Do not include the def line, imports, or any explanation. "
-        "Do not wrap the answer in markdown code fences."
+        "Do not include the def line or imports inside the code block."
     )
-    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=800)
+    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=1500)
     return _extract_code(raw)
 
 

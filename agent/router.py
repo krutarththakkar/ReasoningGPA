@@ -246,7 +246,7 @@ def detect_domain(question: str) -> str:
             "future_prediction"
         }
         
-        # Exact match or just starts with
+        # for exact match or what it could start with
         for vd in valid_domains:
             if vd in domain:
                 return vd

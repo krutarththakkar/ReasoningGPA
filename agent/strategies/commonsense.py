@@ -11,9 +11,8 @@ from agent.llm import call_llm, reset_call_count
 from agent.extractor import extract_answer
 
 _SYSTEM = (
-    "You answer factual trivia with the shortest possible answer — "
-    "just a name, place, date, or brief phrase. "
-    "No explanation, no full sentences, no 'Final answer:' prefix."
+    "You answer factual trivia. First, think step by step to arrive at the correct answer. "
+    "At the very end, state 'Final answer: <answer>' where <answer> is just a name, place, date, or brief phrase."
 )
 
 
@@ -21,9 +20,9 @@ def commonsense_strategy(question: str) -> str:
     reset_call_count()
     prompt = (
         f"{question}\n\n"
-        "Answer with just the name, place, date, or short phrase. No explanation."
+        "Think step by step and then provide the final answer starting with 'Final answer:'."
     )
-    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=80)
+    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=300)
 
     answer = extract_answer(raw, "commonsense")
     if answer:
