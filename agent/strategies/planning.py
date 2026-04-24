@@ -14,10 +14,10 @@ from agent.llm import call_llm, reset_call_count
 
 _SYSTEM = (
     "You are a careful planner. "
-    "Given a planning problem, output ONLY the plan as a sequence of actions. "
-    "Each action on its own line, in the form (action arg1 arg2 ...). "
-    "Use lowercase and only action names from the problem. "
-    "No numbering, no explanation, no markdown fences."
+    "Think step-by-step. First, trace the initial state, the goal state, and keep track of the state of the world after each action. "
+    "After your reasoning, output the final plan inside a ```plan code block. "
+    "Inside the code block, put each action on its own line, in the form (action arg1 arg2 ...). "
+    "Use lowercase and only action names from the problem."
 )
 
 
@@ -40,12 +40,12 @@ def planning_strategy(question: str) -> str:
     question = _final_statement_only(question)
     prompt = (
         f"{question}\n\n"
-        "Return ONLY the plan, one action per line, each like (action arg1 arg2 ...).\n"
+        "Solve the planning problem step-by-step.\n"
+        "At the end, output the plan inside a ```plan block, one action per line, each like (action arg1 arg2 ...).\n"
         "Use exact action names from the problem; do not invent wrapper actions like use.\n"
-        "Do not include words like object, from, or another inside action lines.\n"
-        "No numbering, no explanation, no markdown."
+        "Do not include words like object, from, or another inside action lines."
     )
-    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=1000)
+    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=1500)
     return _extract_plan(raw)
 
 
@@ -220,7 +220,7 @@ def _extract_plan(raw: str) -> str:
     s = raw.rstrip()
 
     # unwrap a markdown fence if the model used one
-    fence = re.search(r"```\w*\s*\n(.*?)\n```", s, re.DOTALL)
+    fence = re.search(r"```(?:plan)?\s*\n(.*?)\n```", s, re.DOTALL | re.IGNORECASE)
     if fence:
         s = fence.group(1)
 

@@ -200,7 +200,7 @@ def normalize_for_grading(answer: str) -> str:
     Normalize an answer for comparison with expected output.
     Mirrors the tutorial's normalize_text function.
     """
-    s = (answer or "").strip().lower()
+    s = str(answer or "").strip().lower()
     s = re.sub(r"[^\w\s\-']", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
     return s
