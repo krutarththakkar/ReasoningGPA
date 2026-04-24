@@ -195,6 +195,25 @@ def _has_competition_math_signal(question: str) -> bool:
     )
 
 
+def _looks_multilingual_word_problem(question: str) -> bool:
+    non_ascii = sum(1 for c in question if ord(c) > 127)
+    if non_ascii < 4 or not re.search(r"\d", question):
+        return False
+
+    numbers = re.findall(r"\d+(?:[.,]\d+)?", question)
+    has_question = any(mark in question for mark in "?؟？")
+    has_arithmetic_hint = bool(
+        re.search(
+            r"[%$€£¥+\-*/×÷]|倍|半|分の|多少|几|幾|何|combien|cu[aá]nt|"
+            r"calcula|คำนวณ|กี่|ทั้งหมด|ครึ่ง|หนึ่งใน|สองใน|कितन|ఎంత|কত",
+            question,
+            re.IGNORECASE,
+        )
+    )
+
+    return len(numbers) >= 2 or has_question or has_arithmetic_hint
+
+
 def detect_domain(question: str) -> str:
     """
     Classify question into one of the supported domains using heuristics.
@@ -253,6 +272,9 @@ def detect_domain(question: str) -> str:
     # Strong word problem signals (2+ hits or 1 very strong signal)
     if _has_math_dollar_span(q) or _has_competition_math_signal(q):
         return "math"
+
+    if _looks_multilingual_word_problem(q):
+        return "word_problem"
 
     word_problem_hits = sum(
         1 for pat in _WORD_PROBLEM_PATTERNS
