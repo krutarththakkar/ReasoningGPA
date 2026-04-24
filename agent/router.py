@@ -155,6 +155,21 @@ _FUTURE_PREDICTION_MARKERS = [
 ]
 
 
+def _has_math_dollar_span(question: str) -> bool:
+    """True for LaTeX-ish $...$ spans, false for plain money amounts."""
+    for match in re.finditer(r"\$([^$]{1,80})\$", question):
+        span = match.group(1).strip()
+        if not span:
+            continue
+        if re.search(r"[\\{}_^=<>+\-*/]", span):
+            return True
+        if re.fullmatch(r"\.?\d+(?:\.\d+)?", span):
+            return True
+        if re.fullmatch(r"[A-Za-z][A-Za-z0-9]*", span):
+            return True
+    return False
+
+
 def detect_domain(question: str) -> str:
     """
     Classify question into one of the supported domains using heuristics.
@@ -211,6 +226,9 @@ def detect_domain(question: str) -> str:
 
     # Word problem — check BEFORE math to avoid dollar sign confusion
     # Strong word problem signals (2+ hits or 1 very strong signal)
+    if _has_math_dollar_span(q):
+        return "math"
+
     word_problem_hits = sum(
         1 for pat in _WORD_PROBLEM_PATTERNS
         if re.search(pat, q, re.IGNORECASE)
