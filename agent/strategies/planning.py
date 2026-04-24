@@ -1,0 +1,52 @@
+"""
+Planning strategy — solve PDDL-like action planning problems.
+Expected answers are multi-line action lists like:
+    (feast b d)
+    (succumb b)
+We prompt for the plan only, then filter out any prose.
+"""
+from __future__ import annotations
+
+import re
+
+from agent.llm import call_llm, reset_call_count
+
+_SYSTEM = (
+    "You are a careful planner. "
+    "Given a planning problem, output ONLY the plan as a sequence of actions. "
+    "Each action on its own line, in the form (action arg1 arg2 ...). "
+    "Use lowercase. No numbering, no explanation, no markdown fences."
+)
+
+
+def planning_strategy(question: str) -> str:
+    reset_call_count()
+    prompt = (
+        f"{question}\n\n"
+        "Return ONLY the plan, one action per line, each like (action arg1 arg2 ...).\n"
+        "No numbering, no explanation, no markdown."
+    )
+    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=1000)
+    return _extract_plan(raw)
+
+
+def _extract_plan(raw: str) -> str:
+    """Pull out just the parenthesised action lines from the model's response."""
+    if not raw:
+        return ""
+    s = raw.rstrip()
+
+    # unwrap a markdown fence if the model used one
+    fence = re.search(r"```\w*\s*\n(.*?)\n```", s, re.DOTALL)
+    if fence:
+        s = fence.group(1)
+
+    # scan the whole text and keep anything that matches the (action args) shape
+    # action/arg chars: lowercase letters, digits, hyphens, underscores
+    pat = re.compile(r"\([a-zA-Z][\w\-]*(?:\s+[\w\-]+)*\)")
+    actions = [m.group(0).lower() for m in pat.finditer(s)]
+    if not actions:
+        return ""
+
+    # expected answers end with a trailing newline — mimic that for exact match
+    return "\n".join(actions) + "\n"

@@ -39,3 +39,6 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
+
+
+agent/strategies/__init__.py
