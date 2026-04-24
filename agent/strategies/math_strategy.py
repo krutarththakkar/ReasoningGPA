@@ -25,6 +25,12 @@ def _is_clean_number(s: str) -> bool:
     return bool(s) and bool(re.fullmatch(r"\s*-?\d+(?:\.\d+)?\s*", s))
 
 
+def _last_number(text: str) -> str:
+    """Grab the last bare number from a blob of text. '' if none found."""
+    nums = re.findall(r"-?\d+(?:\.\d+)?", text or "")
+    return nums[-1] if nums else ""
+
+
 def _looks_wrong(answer: str) -> bool:
     """True if the answer doesn't look like a clean numeric result."""
     if not answer:
@@ -75,7 +81,14 @@ def math_strategy(question: str) -> str:
         # nothing worked — try a plain CoT as last resort
         raw_cot = chain_of_thought(question, "math")
         cot_answer = extract_answer(raw_cot, "math")
-        if cot_answer:
+        if cot_answer and not _looks_wrong(cot_answer):
             return cot_answer
+
+        # everything still looks like junk — scan all raw responses for the
+        # last bare number so we never return LaTeX or prose for a math question
+        for raw in (raw_cot, raw_ref, raw_sb):
+            n = _last_number(raw)
+            if n:
+                return n
 
     return candidate or sc_answer or sb_answer or ""
