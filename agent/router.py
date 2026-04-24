@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import re
 
-from agent.llm import call_llm
-
 
 # Science keywords that distinguish science_mcq from logic mcq
 _SCIENCE_KEYWORDS = {
@@ -221,38 +219,12 @@ def _looks_multilingual_word_problem(question: str) -> bool:
 
 def detect_domain(question: str) -> str:
     """
-    Classify question into one of the supported domains using an LLM call,
-    with heuristic fallbacks.
+    Classify question into one of the supported domains using deterministic
+    heuristics only.
     Returns: coding | planning | future_prediction | math | word_problem |
              reading_comprehension | science_mcq | logic | true_false | commonsense
     """
     q = question.strip()
-    
-    prompt = (
-        "Classify this question into EXACTLY ONE of the following domains: "
-        "math, word_problem, reading_comprehension, science_mcq, logic, "
-        "true_false, commonsense, coding, planning, future_prediction.\n\n"
-        "Question:\n" + q + "\n\n"
-        "Return ONLY the domain name in lowercase, and nothing else."
-    )
-    
-    try:
-        raw_domain = call_llm(prompt, temperature=0.0, max_tokens=10)
-        domain = raw_domain.strip().lower()
-        
-        valid_domains = {
-            "math", "word_problem", "reading_comprehension", "science_mcq", 
-            "logic", "true_false", "commonsense", "coding", "planning", 
-            "future_prediction"
-        }
-        
-        # Exact match or just starts with
-        for vd in valid_domains:
-            if vd in domain:
-                return vd
-    except Exception:
-        pass
-
     q_lower = q.lower()
 
     # Check the three dev-data domains first — their markers are very specific
