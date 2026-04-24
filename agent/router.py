@@ -64,6 +64,24 @@ _MATH_KEYWORDS = [
     r"\bfind the (number|sum|product|area|volume|length|distance|angle|probability)\b",
 ]
 
+_COMPETITION_MATH_PATTERNS = [
+    r"\bAIME\b",
+    r"\bhow many ways\b",
+    r"\bpositive integers?\b",
+    r"\binteger-sided\b",
+    r"\bnoncongruent\b",
+    r"\bcommon perimeter\b",
+    r"\bminimum possible value\b",
+    r"\bmaximum possible value\b",
+    r"\bsets? of two\b",
+    r"\bdisjoint subsets?\b",
+    r"\bfolded in half repeatedly\b",
+    r"\bunit squares?\b.*\bfolded\b",
+    r"\bratio of the lengths?\b",
+    r"\bnumber of (sets|ways|ordered pairs|solutions|integers)\b",
+    r"\b(largest|smallest|least|greatest) number\b",
+]
+
 # Word problem patterns
 _WORD_PROBLEM_PATTERNS = [
     r"\$\s*\d",                          # $ amounts
@@ -170,6 +188,13 @@ def _has_math_dollar_span(question: str) -> bool:
     return False
 
 
+def _has_competition_math_signal(question: str) -> bool:
+    return any(
+        re.search(pat, question, re.IGNORECASE)
+        for pat in _COMPETITION_MATH_PATTERNS
+    )
+
+
 def detect_domain(question: str) -> str:
     """
     Classify question into one of the supported domains using heuristics.
@@ -226,7 +251,7 @@ def detect_domain(question: str) -> str:
 
     # Word problem — check BEFORE math to avoid dollar sign confusion
     # Strong word problem signals (2+ hits or 1 very strong signal)
-    if _has_math_dollar_span(q):
+    if _has_math_dollar_span(q) or _has_competition_math_signal(q):
         return "math"
 
     word_problem_hits = sum(
