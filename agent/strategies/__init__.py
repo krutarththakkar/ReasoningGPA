@@ -19,6 +19,14 @@ _REGISTRY = {
     "logic":                  logic_strategy,
     "true_false":             true_false_strategy,
     "commonsense":            commonsense_strategy,
+    # Real dev-data labels — "common_sense" is the same as "commonsense".
+    # Coding / planning / future_prediction get dedicated strategies in later
+    # patches; for now they fall back to commonsense so they at least produce
+    # something rather than crashing.
+    "common_sense":           commonsense_strategy,
+    "coding":                 commonsense_strategy,
+    "planning":               commonsense_strategy,
+    "future_prediction":      commonsense_strategy,
 }
 
 

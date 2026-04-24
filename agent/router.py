@@ -136,15 +136,44 @@ _RC_PATTERNS = [
     r"\[TLE\]",
 ]
 
+# Dev-label domains (coding / planning / future_prediction). Very specific
+# scaffolding phrases so false positives on other domains are 0.
+_CODING_MARKERS = [
+    r"self-contained code starting",
+    r"The function should output",
+    r"def\s+task_func",
+]
+_PLANNING_MARKERS = [
+    r"Here are the actions I can do",
+    r"Here are the actions that can be performed",
+    r"I am playing with a set of objects",
+    r"I have to plan",
+]
+_FUTURE_PREDICTION_MARKERS = [
+    r"agent that can predict future events",
+    r"\\boxed\{YOUR_PREDICTION\}",
+]
+
 
 def detect_domain(question: str) -> str:
     """
-    Classify question into one of 7 domains using heuristics.
-    Returns: math | word_problem | reading_comprehension | science_mcq |
-             logic | true_false | commonsense
+    Classify question into one of the supported domains using heuristics.
+    Returns: coding | planning | future_prediction | math | word_problem |
+             reading_comprehension | science_mcq | logic | true_false | commonsense
     """
     q = question.strip()
     q_lower = q.lower()
+
+    # Check the three dev-data domains first — their markers are very specific
+    for pat in _FUTURE_PREDICTION_MARKERS:
+        if re.search(pat, q, re.IGNORECASE):
+            return "future_prediction"
+    for pat in _CODING_MARKERS:
+        if re.search(pat, q, re.IGNORECASE):
+            return "coding"
+    for pat in _PLANNING_MARKERS:
+        if re.search(pat, q, re.IGNORECASE):
+            return "planning"
 
     # True/False (check early, has explicit "Facts:" marker)
     for pat in _TRUE_FALSE_PATTERNS:

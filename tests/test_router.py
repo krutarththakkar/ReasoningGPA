@@ -130,6 +130,11 @@ TEST_CASES = [
         "(C) The Lion King\n(D) Daddy Day Camp",
         "commonsense"
     ),
+
+    # --- Dev-data domains (coding / planning / future_prediction) ---
+    ("Retrieves names. The function should output list. Write self-contained code starting with def task_func(user):", "coding"),
+    ("I am playing with a set of objects. Here are the actions I can do", "planning"),
+    ("You are an agent that can predict future events. \\boxed{YOUR_PREDICTION}", "future_prediction"),
 ]
 
 
