@@ -48,6 +48,10 @@ def _natural_action(line: str) -> str | None:
         (r"^succumb object ([\w\-]+)$", "(succumb {0})"),
         (r"^feast object ([\w\-]+) from (?:another )?object ([\w\-]+)$", "(feast {0} {1})"),
         (r"^overcome object ([\w\-]+) from (?:another )?object ([\w\-]+)$", "(overcome {0} {1})"),
+        (r"^pick up the ([\w\-]+) block$", "(pick-up {0})"),
+        (r"^put down the ([\w\-]+) block$", "(put-down {0})"),
+        (r"^unstack the ([\w\-]+) block from on top of the ([\w\-]+) block$", "(unstack {0} {1})"),
+        (r"^stack the ([\w\-]+) block on top of the ([\w\-]+) block$", "(stack {0} {1})"),
     ]
     for pat, template in patterns:
         match = re.match(pat, line)
