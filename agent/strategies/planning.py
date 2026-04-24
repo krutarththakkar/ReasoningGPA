@@ -19,8 +19,19 @@ _SYSTEM = (
 )
 
 
+def _final_statement_only(question: str) -> str:
+    """Keep the rules and the final unsolved planning statement."""
+    if "[STATEMENT]" not in question:
+        return question
+
+    preamble, *statements = question.split("[STATEMENT]")
+    final_statement = statements[-1].split("[PLAN]")[0].rstrip()
+    return f"{preamble.rstrip()}\n\n[STATEMENT]{final_statement}\n\n[PLAN]"
+
+
 def planning_strategy(question: str) -> str:
     reset_call_count()
+    question = _final_statement_only(question)
     prompt = (
         f"{question}\n\n"
         "Return ONLY the plan, one action per line, each like (action arg1 arg2 ...).\n"
