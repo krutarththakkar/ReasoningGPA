@@ -9,6 +9,7 @@ Usage:
   python eval/run_eval.py --domain math          # only math questions
   python eval/run_eval.py --n 50 --no-llm-judge  # skip LLM judge (faster)
   python eval/run_eval.py --sample fixed         # always same 50 questions
+  python eval/run_eval.py --sample random        # random dev sample matching routed test mix
 """
 
 from __future__ import annotations
@@ -16,9 +17,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import sys
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
 
@@ -30,6 +32,7 @@ from agent.router import detect_domain
 from eval.grader import grade
 
 DEV_PATH     = Path("cse476_final_project_dev_data.json")
+TEST_PATH    = Path("cse_476_final_project_test_data.json")
 RESULTS_DIR  = Path("eval/results")
 FIXED_SAMPLE = Path("eval/fixed_sample_indices.json")
 
@@ -46,7 +49,7 @@ def get_fixed_sample(dev_data: list, n: int = 50) -> list[int]:
     if FIXED_SAMPLE.exists():
         with FIXED_SAMPLE.open() as f:
             indices = json.load(f)
-        return indices[:n]
+        return _interleave_indices_by_domain(dev_data, indices)[:n]
 
     # Build a balanced sample
     by_domain: dict = defaultdict(list)
@@ -64,13 +67,132 @@ def get_fixed_sample(dev_data: list, n: int = 50) -> list[int]:
         alloc = max(1, round(len(items) / total_items * total))
         indices.extend(items[:alloc])
 
-    indices = sorted(indices[:n])
+    indices = _interleave_indices_by_domain(dev_data, sorted(indices[:n]))
 
     # Save for future runs
     with FIXED_SAMPLE.open("w") as f:
         json.dump(indices, f)
 
     return indices
+
+
+def _interleave_indices_by_domain(dev_data: list, indices: list[int]) -> list[int]:
+    """Order a fixed sample so early console output covers all domains."""
+    by_domain: dict = defaultdict(list)
+    domain_order = []
+
+    for idx in indices:
+        domain = dev_data[idx].get("domain", detect_domain(dev_data[idx]["input"]))
+        if domain not in by_domain:
+            domain_order.append(domain)
+        by_domain[domain].append(idx)
+
+    interleaved = []
+    while any(by_domain.values()):
+        for domain in domain_order:
+            if by_domain[domain]:
+                interleaved.append(by_domain[domain].pop(0))
+
+    return interleaved
+
+
+def get_testmix_sample(
+    dev_data: list,
+    test_path: Path,
+    n: int = 50,
+) -> tuple[list[int], Counter, Counter, list[str]]:
+    """
+    Return random dev indices whose routed-domain mix approximates the test set.
+
+    The test file has no labels, so we estimate its mix with the same router the
+    agent uses. If a routed test domain has no matching dev examples, we report
+    it and redistribute those slots across available routed domains.
+    """
+    with test_path.open("r", encoding="utf-8") as f:
+        test_data = json.load(f)
+
+    target_mix = Counter(detect_domain(item["input"]) for item in test_data)
+
+    dev_by_route: dict = defaultdict(list)
+    for idx, item in enumerate(dev_data):
+        routed = detect_domain(item["input"])
+        dev_by_route[routed].append(idx)
+
+    missing_domains = [
+        domain for domain in sorted(target_mix)
+        if domain not in dev_by_route
+    ]
+    available_weights = Counter({
+        domain: count
+        for domain, count in target_mix.items()
+        if domain in dev_by_route
+    })
+    capacities = {
+        domain: len(dev_by_route[domain])
+        for domain in available_weights
+    }
+    allocations = _allocate_proportionally(n, available_weights, capacities)
+
+    indices = []
+    for domain, count in allocations.items():
+        pool = list(dev_by_route[domain])
+        random.shuffle(pool)
+        indices.extend(pool[:count])
+
+    random.shuffle(indices)
+    selected_mix = Counter(detect_domain(dev_data[idx]["input"]) for idx in indices)
+    return indices, target_mix, selected_mix, missing_domains
+
+
+def _allocate_proportionally(
+    n: int,
+    weights: Counter,
+    capacities: dict[str, int],
+) -> Counter:
+    """Largest-remainder allocation with per-domain capacity limits."""
+    total_weight = sum(weights.values())
+    if n <= 0 or total_weight <= 0:
+        return Counter()
+
+    raw = {
+        domain: n * weight / total_weight
+        for domain, weight in weights.items()
+    }
+    allocation = Counter({
+        domain: min(int(value), capacities[domain])
+        for domain, value in raw.items()
+    })
+
+    remaining = n - sum(allocation.values())
+    while remaining > 0:
+        candidates = [
+            domain for domain in weights
+            if allocation[domain] < capacities[domain]
+        ]
+        if not candidates:
+            break
+        candidates.sort(
+            key=lambda domain: (
+                raw[domain] - int(raw[domain]),
+                weights[domain],
+            ),
+            reverse=True,
+        )
+        for domain in candidates:
+            if remaining <= 0:
+                break
+            allocation[domain] += 1
+            remaining -= 1
+
+    return allocation
+
+
+def _format_counter(counter: Counter, total: int | None = None) -> str:
+    total = total or sum(counter.values()) or 1
+    return ", ".join(
+        f"{domain}: {count} ({count / total * 100:.1f}%)"
+        for domain, count in counter.most_common()
+    )
 
 
 def run_eval(
@@ -173,7 +295,7 @@ def main():
     parser.add_argument("--n",           type=int,  default=None,  help="Number of questions")
     parser.add_argument("--start",       type=int,  default=0,     help="Start index")
     parser.add_argument("--domain",      type=str,  default=None,  help="Filter by domain")
-    parser.add_argument("--sample",      type=str,  default=None,  help="'fixed' for fixed 50-question sample")
+    parser.add_argument("--sample",      type=str,  default=None,  choices=["fixed", "random"], help="'fixed' for stable sample, 'random' for random sample matching routed test mix")
     parser.add_argument("--no-llm-judge",action="store_true",      help="Skip LLM judge (faster, less accurate grading)")
     parser.add_argument("--quiet",       action="store_true",      help="Suppress per-question output")
     args = parser.parse_args()
@@ -184,9 +306,25 @@ def main():
 
     # Determine which questions to evaluate
     if args.sample == "fixed":
-        n = args.n or 50
+        n = args.n if args.n is not None else 50
         indices = get_fixed_sample(dev_data, n)
         print(f"Using fixed sample of {len(indices)} questions.")
+    elif args.sample == "random":
+        n = args.n if args.n is not None else 50
+        indices, target_mix, selected_mix, missing_domains = get_testmix_sample(
+            dev_data,
+            TEST_PATH,
+            n,
+        )
+        print(f"Using random test-mix sample of {len(indices)} questions.")
+        print(f"Routed test mix: {_format_counter(target_mix)}")
+        print(f"Selected routed mix: {_format_counter(selected_mix)}")
+        if missing_domains:
+            print(
+                "No matching dev examples for routed test domains: "
+                + ", ".join(missing_domains)
+                + ". Redistributed those slots across available domains."
+            )
     elif args.domain:
         all_indices = [
             i for i, item in enumerate(dev_data)
