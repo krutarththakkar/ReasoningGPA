@@ -11,9 +11,9 @@ import sys
 import time
 import requests
 
-API_KEY  = os.getenv("OPENAI_API_KEY", "sk-3X-ZR0l-AOofvpds5fhsaA")
-API_BASE = os.getenv("API_BASE", "https://openai.rc.asu.edu/v1")
-MODEL    = os.getenv("MODEL_NAME", "qwen3-30b-a3b-instruct-2507")
+API_KEY  = os.getenv("API_KEY")
+API_BASE = os.getenv("API_BASE")
+MODEL    = os.getenv("MODEL")
 
 # delay betw calls
 _RATE_SLEEP = 0.3
