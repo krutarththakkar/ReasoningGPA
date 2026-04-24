@@ -41,6 +41,21 @@ def planning_strategy(question: str) -> str:
     return _extract_plan(raw)
 
 
+def _natural_action(line: str) -> str | None:
+    line = line.strip().lower().rstrip(".")
+    patterns = [
+        (r"^attack object ([\w\-]+)$", "(attack {0})"),
+        (r"^succumb object ([\w\-]+)$", "(succumb {0})"),
+        (r"^feast object ([\w\-]+) from (?:another )?object ([\w\-]+)$", "(feast {0} {1})"),
+        (r"^overcome object ([\w\-]+) from (?:another )?object ([\w\-]+)$", "(overcome {0} {1})"),
+    ]
+    for pat, template in patterns:
+        match = re.match(pat, line)
+        if match:
+            return template.format(*match.groups())
+    return None
+
+
 def _extract_plan(raw: str) -> str:
     """Pull out just the parenthesised action lines from the model's response."""
     if not raw:
@@ -57,7 +72,13 @@ def _extract_plan(raw: str) -> str:
     pat = re.compile(r"\([a-zA-Z][\w\-]*(?:\s+[\w\-]+)*\)")
     actions = [m.group(0).lower() for m in pat.finditer(s)]
     if not actions:
-        return ""
+        actions = [
+            action
+            for line in s.splitlines()
+            if (action := _natural_action(line)) is not None
+        ]
+        if not actions:
+            return ""
 
     # expected answers end with a trailing newline — mimic that for exact match
     return "\n".join(actions) + "\n"
