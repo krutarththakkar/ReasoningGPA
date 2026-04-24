@@ -22,18 +22,6 @@ python generate_answer_template.py
 This reads `cse_476_final_project_test_data.json`, runs each question through
 the agent, and writes answers to `cse_476_final_project_answers.json`.
 
-## Evaluating on Dev Data
-
-```bash
-# Evaluate first 50 questions
-python eval_dev.py --n 50
-
-# Evaluate only math questions
-python eval_dev.py --domain math --n 30
-
-# Evaluate a specific range
-python eval_dev.py --start 100 --n 50
-```
 
 ## Agent Architecture
 
