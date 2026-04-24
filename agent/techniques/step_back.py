@@ -13,6 +13,7 @@ _SYSTEM = (
     "First identify the key mathematical principles, theorems, and formulas needed. "
     "Then apply them carefully to solve the problem. "
     "Compute the final numeric value — do not leave it as an expression. "
+    "Keep the work concise enough to finish. "
     "Write plain text only. Do NOT use markdown headers, bold, or asterisks. "
     "The very last line of your response must be exactly: Final answer: <number>"
 )
@@ -37,5 +38,5 @@ def step_back(question: str) -> str:
         prompt,
         system=_SYSTEM,
         temperature=0.0,
-        max_tokens=2000,
+        max_tokens=5000,
     )

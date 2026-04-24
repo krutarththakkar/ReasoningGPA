@@ -42,12 +42,25 @@ def _looks_wrong(answer: str) -> bool:
     # LaTeX leftovers — if "$ x = ... $" or "\frac{...}" slipped through, don't trust it
     if "$" in answer or "\\" in answer:
         return True
-    # letter-heavy junk like "Step 1" or "10 apples" — math answers should be a bare number
-    letters = sum(1 for c in answer if c.isalpha())
-    digits = sum(1 for c in answer if c.isdigit())
-    if letters >= max(3, digits * 2):
+    if re.search(r"[A-Za-z=]", answer):
+        return True
+    if _is_clean_number(answer) and answer.strip() in {"0", "1"}:
         return True
     return False
+
+
+def _needs_second_pass(answer: str, question: str) -> bool:
+    if not _is_clean_number(answer):
+        return False
+    s = answer.strip()
+    if s in {"0", "1"}:
+        return True
+    try:
+        if abs(float(s)) < 10 and ("$" in question or "\\" in question):
+            return True
+    except ValueError:
+        pass
+    return "." in s and ("$" in question or "\\" in question)
 
 
 def math_strategy(question: str) -> str:
@@ -58,7 +71,7 @@ def math_strategy(question: str) -> str:
 
     # if step_back already gave a clean bare number, trust it and skip the 3
     # self-consistency calls — saves time and those samples drift to LaTeX anyway
-    if _is_clean_number(sb_answer):
+    if _is_clean_number(sb_answer) and not _needs_second_pass(sb_answer, question):
         return sb_answer.strip()
 
     sc_answer = self_consistency(question, "math", n=3)
@@ -66,22 +79,26 @@ def math_strategy(question: str) -> str:
     # If both methods landed on the same number, we're confident
     sb_num = extract_number(sb_answer)
     sc_num = extract_number(sc_answer)
-    if sb_num and sc_num and sb_num == sc_num:
+    if sb_num and sc_num and sb_num == sc_num and not _needs_second_pass(sb_answer, question):
         return sb_num
 
-    candidate = sb_answer if not _looks_wrong(sb_answer) else sc_answer
+    candidate = (
+        sb_answer
+        if not _looks_wrong(sb_answer) and not _needs_second_pass(sb_answer, question)
+        else sc_answer
+    )
 
-    if _looks_wrong(candidate):
+    if _looks_wrong(candidate) or _needs_second_pass(candidate, question):
         seed = candidate or sb_answer or sc_answer or raw_sb[:200]
         raw_ref = self_refine(question, seed, "math")
         ref_answer = extract_answer(raw_ref, "math")
-        if ref_answer and not _looks_wrong(ref_answer):
+        if ref_answer and not _looks_wrong(ref_answer) and not _needs_second_pass(ref_answer, question):
             return ref_answer
 
         # nothing worked — try a plain CoT as last resort
         raw_cot = chain_of_thought(question, "math")
         cot_answer = extract_answer(raw_cot, "math")
-        if cot_answer and not _looks_wrong(cot_answer):
+        if cot_answer and not _looks_wrong(cot_answer) and not _needs_second_pass(cot_answer, question):
             return cot_answer
 
         # everything still looks like junk — scan all raw responses for the
