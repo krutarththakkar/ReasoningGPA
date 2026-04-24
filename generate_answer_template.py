@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """
-Generate a placeholder answer file that matches the expected auto-grader format.
+Generate the submission answers JSON using the project's agent_loop.
 
-Replace the placeholder logic inside `build_answers()` with your own agent loop
-before submitting so the ``output`` fields contain your real predictions.
-
-Reads the input questions from cse_476_final_project_test_data.json and writes
-an answers JSON file where each entry contains a string under the "output" key.
+Reads cse_476_final_project_test_data.json and writes
+cse_476_final_project_answers.json (one {"output": str} per question).
+Run from the repo root: python generate_answer_template.py
 """
 
 from __future__ import annotations
@@ -15,6 +13,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
+from agent import agent_loop
 
 INPUT_PATH = Path("cse_476_final_project_test_data.json")
 OUTPUT_PATH = Path("cse_476_final_project_answers.json")
@@ -29,13 +28,13 @@ def load_questions(path: Path) -> List[Dict[str, Any]]:
 
 
 def build_answers(questions: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-    answers = []
-    for idx, question in enumerate(questions, start=1):
-        # Example: assume you have an agent loop that produces an answer string.
-        # real_answer = agent_loop(question["input"])
-        # answers.append({"output": real_answer})
-        placeholder_answer = f"Placeholder answer for question {idx}"
-        answers.append({"output": placeholder_answer})
+    answers: List[Dict[str, str]] = []
+    total = len(questions)
+    for idx, question in enumerate(questions):
+        if total > 100 and (idx + 1) % 100 == 0:
+            print(f"  progress {idx + 1}/{total}", flush=True)
+        text = agent_loop(question["input"])
+        answers.append({"output": text})
     return answers
 
 
