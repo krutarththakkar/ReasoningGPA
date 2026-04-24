@@ -89,6 +89,7 @@ def run_eval(
         question = item["input"]
         expected = item["output"]
         domain   = item.get("domain", detect_domain(question))
+        routed_domain = detect_domain(question)
 
         t0 = time.time()
         try:
@@ -109,6 +110,7 @@ def run_eval(
         result = {
             "index":      idx,
             "domain":     domain,
+            "routed_domain": routed_domain,
             "question":   question[:100],
             "expected":   expected,
             "prediction": prediction,
@@ -120,8 +122,9 @@ def run_eval(
         if verbose:
             mark = "✅" if is_correct else "❌"
             running_correct = sum(1 for r in results if r["correct"])
+            route_note = f" -> {routed_domain}" if routed_domain != domain else ""
             print(
-                f"{mark} [{rank:3d}/{total}] [{domain:22s}] "
+                f"{mark} [{rank:3d}/{total}] [{domain:22s}{route_note}] "
                 f"exp={expected!r:12s} got={prediction!r:25s} "
                 f"({elapsed:.1f}s)"
             )
