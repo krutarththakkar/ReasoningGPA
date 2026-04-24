@@ -18,6 +18,14 @@ from __future__ import annotations
 import re
 
 
+# words that often start section headers — if a **bold** block starts with
+# one of these, it is almost certainly a header and not the final answer
+_HEADER_WORDS = {
+    "step", "problem", "note", "solution", "setup",
+    "analysis", "approach", "overview", "given", "observation",
+}
+
+
 def extract_answer(raw: str, domain: str) -> str:
     """
     Extract a clean final answer from raw LLM output.
@@ -43,14 +51,7 @@ def extract_answer(raw: str, domain: str) -> str:
     if m:
         return m.group(1).strip()
 
-    # Priority 3: Bold markdown **answer**
-    m = re.search(r"\*\*([^*]+)\*\*", text)
-    if m:
-        candidate = m.group(1).strip()
-        if len(candidate) < 100:
-            return _domain_clean(candidate, domain)
-
-    # Priority 4: "Therefore/Thus/So, X"
+    # Priority 3: "Therefore/Thus/So, X"
     m = re.search(
         r"(?:therefore|thus|so|hence),?\s+(?:the\s+)?(?:answer\s+is\s+)?(.+?)(?:\.|$)",
         text, re.IGNORECASE
@@ -60,7 +61,7 @@ def extract_answer(raw: str, domain: str) -> str:
         if candidate and len(candidate) < 100:
             return _domain_clean(candidate, domain)
 
-    # Priority 5: "m + n = X" or "a + b + c = X" patterns (math)
+    # Priority 4: "m + n = X" or "a + b + c = X" patterns (math)
     if domain == "math":
         m = re.search(r"[a-z]\s*\+\s*[a-z](?:\s*\+\s*[a-z])?\s*=\s*(\d+)", text, re.IGNORECASE)
         if m:
@@ -70,6 +71,15 @@ def extract_answer(raw: str, domain: str) -> str:
         m = re.search(r"=\s*(\d+(?:\.\d+)?)\s*\.?\s*$", text, re.MULTILINE)
         if m:
             return m.group(1).strip()
+
+    # Priority 5: Bold markdown **answer** — runs AFTER the explicit patterns so
+    # that bolded section headers like "**Step 1 - Identify relevant concepts**"
+    # don't get picked up as the answer. We scan all bold spans and keep only
+    # ones that look like a real final answer.
+    for bm in re.finditer(r"\*\*([^*]+)\*\*", text):
+        candidate = bm.group(1).strip().rstrip(":.,;")
+        if _looks_like_answer(candidate, domain):
+            return _domain_clean(candidate, domain)
 
     # Priority 6: Domain-specific extraction
     result = _domain_specific(text, domain)
@@ -154,6 +164,33 @@ def _domain_clean(candidate: str, domain: str) -> str:
             return candidate.strip()
 
     return candidate.strip()
+
+
+def _looks_like_answer(candidate: str, domain: str) -> bool:
+    """Filter for bolded candidates — reject section-header-looking strings."""
+    if not candidate or len(candidate) > 80:
+        return False
+
+    # reject things starting with a section-header word ("Step 1", "Problem:", etc.)
+    words = candidate.split()
+    if words and words[0].lower().rstrip(":-") in _HEADER_WORDS:
+        return False
+
+    # math answers should be a bare number — not phrases like "radius 100"
+    if domain == "math":
+        c = candidate.rstrip(":.,;")
+        return bool(re.match(r"^-?\d+(?:\.\d+)?$", c))
+
+    # mcq: just the letter
+    if domain == "science_mcq":
+        return bool(re.match(r"^[A-D]$", candidate.strip()))
+
+    # anything ending in ":" reads like a header, skip it
+    if candidate.endswith(":"):
+        return False
+
+    # short phrase is fine for the remaining domains
+    return len(candidate) < 50
 
 
 def normalize_for_grading(answer: str) -> str:

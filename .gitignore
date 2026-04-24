@@ -1,7 +1,38 @@
 agent.py
 
+# Secrets & local env
+.env
+.env.local
+.env.*.local
+
+# Course / project data and submission output (keep large or sensitive JSON local)
+cse476_final_project_dev_data.json
+cse_476_final_project_test_data.json
+cse_476_final_project_answers.json
+
+# Eval outputs
+eval/results/
+eval/fixed_sample_indices.json
+
 # Python
 __pycache__/
 *.pyc
 *.pyo
-.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# OS / logs
+.DS_Store
+Thumbs.db
+*.log
+
+# Local DBs (if added later)
+*.db
+*.sqlite
+*.sqlite3

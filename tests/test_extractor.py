@@ -48,6 +48,12 @@ EXTRACTION_CASES = [
     # Last line fallback 
     ("Let me think...\nThe calculation gives us...\n112", "math", "112"),
     ("After tracing:\nBob has the blue ball", "logic", "Bob has the blue ball"),
+
+    # Regression: bolded section headers should NOT be returned as the answer
+    ("**Step 1 — Identify relevant concepts:**\n\nstuff\nFinal answer: 112", "math", "112"),
+    ("**Problem Setup:**\n\nLots of text. The last number is 152.", "math", "152"),
+    ("**radius 100** and then we compute... ending with 728", "math", "728"),
+    ("Computing... **42** is our value.", "math", "42"),
 ]
 
 NORMALIZE_CASES = [
