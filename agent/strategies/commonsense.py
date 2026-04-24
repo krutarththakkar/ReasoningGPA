@@ -1,30 +1,37 @@
 """
-Commonsense strategy.
+Common-sense strategy — short factual trivia. One call, tight prompt.
 
-Plain CoT to get an answer, then verify it. If verification says it's
-fine we return it, otherwise we reflect and try again.
+Questions are things like "Which magazine was started first?" or "What city
+hosts Oberoi's head office?". The model knows these; asking for reasoning +
+verify + reflect just wastes calls and occasionally overrides a correct answer.
 """
-
 from __future__ import annotations
 
-from agent.llm import reset_call_count
-from agent.techniques.cot import chain_of_thought
-from agent.techniques.verify import verify
-from agent.techniques.reflection import reflect
+from agent.llm import call_llm, reset_call_count
 from agent.extractor import extract_answer
+
+_SYSTEM = (
+    "You answer factual trivia with the shortest possible answer — "
+    "just a name, place, date, or brief phrase. "
+    "No explanation, no full sentences, no 'Final answer:' prefix."
+)
 
 
 def commonsense_strategy(question: str) -> str:
     reset_call_count()
+    prompt = (
+        f"{question}\n\n"
+        "Answer with just the name, place, date, or short phrase. No explanation."
+    )
+    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=80)
 
-    raw = chain_of_thought(question, "commonsense")
     answer = extract_answer(raw, "commonsense")
-    if not answer:
-        return ""
-
-    if verify(question, answer):
+    if answer:
         return answer
 
-    # verifier wasn't happy — take a second pass
-    reflected = reflect(question, answer, "commonsense")
-    return reflected or answer
+    # fallback: first non-empty line if the extractor couldn't find anything
+    for line in (raw or "").split("\n"):
+        s = line.strip()
+        if s:
+            return s
+    return ""
