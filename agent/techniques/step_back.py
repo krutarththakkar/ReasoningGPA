@@ -13,7 +13,8 @@ _SYSTEM = (
     "First identify the key mathematical principles, theorems, and formulas needed. "
     "Then apply them carefully to solve the problem. "
     "Compute the final numeric value — do not leave it as an expression. "
-    "State 'Final answer: <number>' at the very end."
+    "Write plain text only. Do NOT use markdown headers, bold, or asterisks. "
+    "The very last line of your response must be exactly: Final answer: <number>"
 )
 
 
@@ -23,15 +24,13 @@ def step_back(question: str) -> str:
     Returns raw LLM response.
     """
     prompt = (
-        "Step 1 — Identify relevant concepts:\n"
-        "What mathematical concepts, theorems, or formulas are needed for this problem? "
-        "List them briefly.\n\n"
-        "Step 2 — Solve:\n"
-        "Using those concepts, solve the problem step by step. "
-        "Show all calculations.\n\n"
-        "Step 3 — Final answer:\n"
-        "State the final numeric answer as 'Final answer: <number>'\n\n"
-        f"Problem: {question}"
+        f"Problem: {question}\n\n"
+        "Solve this in plain prose. Do not use headers, bullet points, or bold text.\n\n"
+        "First, briefly list the mathematical concepts, theorems, or formulas relevant here. "
+        "Then work through the solution, showing all calculations. "
+        "Compute the final numeric value — do not leave it as an expression.\n\n"
+        "End with this on its own line as the very last line:\n"
+        "Final answer: <number>"
     )
 
     return call_llm(
