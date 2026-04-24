@@ -28,6 +28,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from agent import agent_loop
+from agent import llm
 from agent.router import detect_domain
 from eval.grader import grade
 
@@ -344,6 +345,15 @@ def main():
 
     use_llm_judge = not args.no_llm_judge
     print(f"LLM judge: {'enabled' if use_llm_judge else 'disabled'}")
+    print(f"LLM API key: {'found' if llm.is_configured() else 'MISSING'}")
+    print(f"LLM API base: {llm.API_BASE}")
+    print(f"LLM model: {llm.MODEL}")
+    if not llm.is_configured():
+        print(
+            "WARNING: API_KEY/OPENAI_API_KEY is missing. "
+            "Non-planning strategies will return empty predictions; "
+            "set it in your shell or repo-root .env."
+        )
     print()
 
     summary = run_eval(dev_data, indices, use_llm_judge=use_llm_judge, verbose=not args.quiet, print_questions=args.printquestions)
