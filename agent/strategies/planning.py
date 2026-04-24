@@ -36,6 +36,9 @@ def planning_strategy(question: str) -> str:
     block_plan = _solve_blocks_problem(question)
     if block_plan:
         return block_plan
+    attack_plan = _solve_attack_feast_problem(question)
+    if attack_plan:
+        return attack_plan
 
     question = _final_statement_only(question)
     prompt = (
@@ -192,6 +195,86 @@ def _move_order(blocks: list[str], goals: dict[str, str]) -> list[str]:
 def _support_ready(block: str, on: dict[str, str], goals: dict[str, str]) -> bool:
     wanted = goals.get(block)
     return wanted is None or on.get(block) == wanted
+
+
+def _solve_attack_feast_problem(question: str) -> str:
+    if "Attack object" not in question or "Feast object" not in question:
+        return ""
+
+    statement = question.split("[STATEMENT]")[-1].split("[PLAN]")[0]
+    match = re.search(
+        r"As initial conditions I have that,\s*(.*?)\.\s*"
+        r"My goal is to have that\s*(.*?)\.",
+        statement,
+        re.IGNORECASE | re.DOTALL,
+    )
+    if not match:
+        return ""
+
+    initial, goal_text = match.groups()
+    objects = sorted(set(re.findall(r"object ([a-z])", statement, re.IGNORECASE)))
+    goals = frozenset(
+        re.findall(r"object ([a-z]) craves object ([a-z])", goal_text, re.IGNORECASE)
+    )
+    start = (
+        frozenset(re.findall(r"province object ([a-z])", initial, re.IGNORECASE)),
+        frozenset(re.findall(r"planet object ([a-z])", initial, re.IGNORECASE)),
+        frozenset(re.findall(r"pain object ([a-z])", initial, re.IGNORECASE)),
+        frozenset(re.findall(r"object ([a-z]) craves object ([a-z])", initial, re.IGNORECASE)),
+        "harmony" in initial.lower(),
+    )
+
+    queue = deque([(start, [])])
+    seen = {start}
+    while queue:
+        state, plan = queue.popleft()
+        if goals <= state[3]:
+            return "\n".join(plan) + "\n"
+        if len(plan) >= 14:
+            continue
+        for next_state, action in _attack_feast_moves(objects, state):
+            if next_state in seen:
+                continue
+            seen.add(next_state)
+            queue.append((next_state, plan + [action]))
+
+    return ""
+
+
+def _attack_feast_moves(objects: list[str], state):
+    province, planet, pain, craves, harmony = state
+    moves = []
+    for obj, other in sorted(craves):
+        if harmony and obj in province:
+            new_province = set(province) - {obj}
+            new_province.add(other)
+            moves.append((
+                (frozenset(new_province), planet, frozenset(set(pain) | {obj}), frozenset(set(craves) - {(obj, other)}), False),
+                f"(feast {obj} {other})",
+            ))
+    for obj in objects:
+        if obj in pain:
+            for other in objects:
+                if other in province:
+                    new_province = set(province) | {obj}
+                    new_province.discard(other)
+                    moves.append((
+                        (frozenset(new_province), planet, frozenset(set(pain) - {obj}), frozenset(set(craves) | {(obj, other)}), True),
+                        f"(overcome {obj} {other})",
+                    ))
+    for obj in objects:
+        if obj in pain:
+            moves.append((
+                (frozenset(set(province) | {obj}), frozenset(set(planet) | {obj}), frozenset(set(pain) - {obj}), craves, True),
+                f"(succumb {obj})",
+            ))
+    for obj in objects:
+        if harmony and obj in province and obj in planet:
+            moves.append((
+                (frozenset(set(province) - {obj}), frozenset(set(planet) - {obj}), frozenset(set(pain) | {obj}), craves, False),
+                f"(attack {obj})",
+            ))
+    return moves
 
 
 def _natural_action(line: str) -> str | None:
