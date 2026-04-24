@@ -68,6 +68,10 @@ TEST_CASES = [
         "was released on 15 November 1970 by Warner Bros. Records. [PAR] The album was produced...",
         "reading_comprehension"
     ),
+    (
+        "Who founded the company? Answer the question using the context. Acme was founded by Dana Lee.",
+        "reading_comprehension"
+    ),
 
     # --- SCIENCE MCQ ---
     (

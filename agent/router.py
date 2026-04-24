@@ -152,6 +152,9 @@ _RC_PATTERNS = [
     r"\[DOC\]",
     r"\[PAR\]",
     r"\[TLE\]",
+    r"answer the question using the context",
+    r"using the context",
+    r"based on the context",
 ]
 
 # Dev-label domains (coding / planning / future_prediction). Very specific
