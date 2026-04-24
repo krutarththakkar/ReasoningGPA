@@ -21,12 +21,20 @@ from agent.extractor import extract_answer, extract_number
 
 
 def _looks_wrong(answer: str) -> bool:
-    """True if the answer is empty, has no digits, or is suspiciously long."""
+    """True if the answer doesn't look like a clean numeric result."""
     if not answer:
         return True
     if not re.search(r"\d", answer):
         return True
-    if len(answer) > 50:
+    if len(answer) > 30:
+        return True
+    # LaTeX leftovers — if "$ x = ... $" or "\frac{...}" slipped through, don't trust it
+    if "$" in answer or "\\" in answer:
+        return True
+    # letter-heavy junk like "Step 1" or "10 apples" — math answers should be a bare number
+    letters = sum(1 for c in answer if c.isalpha())
+    digits = sum(1 for c in answer if c.isdigit())
+    if letters >= max(3, digits * 2):
         return True
     return False
 
