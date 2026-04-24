@@ -10,6 +10,7 @@ from agent.strategies.mcq import mcq_strategy
 from agent.strategies.logic import logic_strategy
 from agent.strategies.true_false import true_false_strategy
 from agent.strategies.commonsense import commonsense_strategy
+from agent.strategies.coding import coding_strategy
 
 _REGISTRY = {
     "math":                   math_strategy,
@@ -24,7 +25,7 @@ _REGISTRY = {
     # patches; for now they fall back to commonsense so they at least produce
     # something rather than crashing.
     "common_sense":           commonsense_strategy,
-    "coding":                 commonsense_strategy,
+    "coding":                 coding_strategy,
     "planning":               commonsense_strategy,
     "future_prediction":      commonsense_strategy,
 }
