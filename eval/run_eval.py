@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+"""
+Evaluation runner — measures agent accuracy on dev data.
+
+Usage:
+  python eval/run_eval.py                        # all 1000 dev questions
+  python eval/run_eval.py --n 50                 # first 50
+  python eval/run_eval.py --n 50 --start 100     # questions 100-149
+  python eval/run_eval.py --domain math          # only math questions
+  python eval/run_eval.py --n 50 --no-llm-judge  # skip LLM judge (faster)
+  python eval/run_eval.py --sample fixed         # always same 50 questions
+"""
+
+from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -8,97 +22,201 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
+# Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from agent import agent_loop
 from agent.router import detect_domain
 from eval.grader import grade
 
-DEV_PATH = Path("cse476_final_project_dev_data.json")
-RESULTS_DIR = Path("eval/results")
+DEV_PATH     = Path("cse476_final_project_dev_data.json")
+RESULTS_DIR  = Path("eval/results")
+FIXED_SAMPLE = Path("eval/fixed_sample_indices.json")
+
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-def load_dev_data(path: Path):
+
+def load_dev_data(path: Path) -> list:
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
-def get_fixed_sample(dev_data, n=50):
-    # Return first n indices for simplicity
-    return list(range(min(n, len(dev_data))))
 
-def run_eval(dev_data, indices, use_llm_judge=True, verbose=True):
+def get_fixed_sample(dev_data: list, n: int = 50) -> list[int]:
+    """Return fixed indices covering all domains proportionally."""
+    if FIXED_SAMPLE.exists():
+        with FIXED_SAMPLE.open() as f:
+            indices = json.load(f)
+        return indices[:n]
+
+    # Build a balanced sample
+    by_domain: dict = defaultdict(list)
+    for i, item in enumerate(dev_data):
+        domain = item.get("domain", detect_domain(item["input"]))
+        by_domain[domain].append(i)
+
+    # Proportional allocation
+    total = n
+    domain_counts = {d: len(v) for d, v in by_domain.items()}
+    total_items = sum(domain_counts.values())
+
+    indices = []
+    for domain, items in by_domain.items():
+        alloc = max(1, round(len(items) / total_items * total))
+        indices.extend(items[:alloc])
+
+    indices = sorted(indices[:n])
+
+    # Save for future runs
+    with FIXED_SAMPLE.open("w") as f:
+        json.dump(indices, f)
+
+    return indices
+
+
+def run_eval(
+    dev_data: list,
+    indices: list[int],
+    use_llm_judge: bool = True,
+    verbose: bool = True,
+) -> dict:
+    """Run evaluation on specified indices. Returns results dict."""
     results = []
-    domain_stats = defaultdict(lambda: {"correct": 0, "total": 0})
+    domain_stats: dict = defaultdict(lambda: {"correct": 0, "total": 0})
 
+    total = len(indices)
     for rank, idx in enumerate(indices, 1):
         item = dev_data[idx]
         question = item["input"]
         expected = item["output"]
-        domain = item.get("domain", detect_domain(question))
+        domain   = item.get("domain", detect_domain(question))
+
         t0 = time.time()
         try:
             prediction = agent_loop(question)
-        except:
+        except Exception as e:
             prediction = ""
             if verbose:
-                print(f"Error on index {idx}")
-        elapsed = time.time() - t0
-        correct = grade(question, prediction, expected, use_llm_judge=use_llm_judge)
-        domain_stats[domain]["total"] += 1
-        if correct:
-            domain_stats[domain]["correct"] += 1
-        results.append({
-            "index": idx,
-            "domain": domain,
-            "question": question,
-            "expected": expected,
-            "prediction": prediction,
-            "correct": correct,
-            "elapsed": round(elapsed, 2),
-        })
-        if verbose:
-            mark = "✅" if correct else "❌"
-            print(f"{mark} Index {idx}: {question[:50]} ... Predicted: {prediction}")
+                print(f"  [ERROR] idx={idx}: {e}", file=sys.stderr)
 
-    total_correct = sum(r["correct"] for r in results)
-    accuracy = total_correct / len(results) * 100 if results else 0
-    return {
-        "timestamp": datetime.now().isoformat(),
-        "total": len(results),
-        "correct": total_correct,
-        "accuracy": round(accuracy, 1),
-        "by_domain": domain_stats,
+        elapsed = time.time() - t0
+
+        is_correct = grade(question, prediction, expected, use_llm_judge=use_llm_judge)
+
+        domain_stats[domain]["total"] += 1
+        if is_correct:
+            domain_stats[domain]["correct"] += 1
+
+        result = {
+            "index":      idx,
+            "domain":     domain,
+            "question":   question[:100],
+            "expected":   expected,
+            "prediction": prediction,
+            "correct":    is_correct,
+            "elapsed":    round(elapsed, 2),
+        }
+        results.append(result)
+
+        if verbose:
+            mark = "✅" if is_correct else "❌"
+            running_correct = sum(1 for r in results if r["correct"])
+            print(
+                f"{mark} [{rank:3d}/{total}] [{domain:22s}] "
+                f"exp={expected!r:12s} got={prediction!r:25s} "
+                f"({elapsed:.1f}s)"
+            )
+
+    # Summary
+    total_correct = sum(1 for r in results if r["correct"])
+    overall_pct = total_correct / len(results) * 100 if results else 0
+
+    summary = {
+        "timestamp":    datetime.now().isoformat(),
+        "total":        len(results),
+        "correct":      total_correct,
+        "accuracy":     round(overall_pct, 1),
+        "by_domain":    {
+            d: {
+                "correct":  s["correct"],
+                "total":    s["total"],
+                "accuracy": round(s["correct"] / s["total"] * 100, 1) if s["total"] else 0,
+            }
+            for d, s in sorted(domain_stats.items())
+        },
         "results": results,
     }
 
+    return summary
+
+
+def print_summary(summary: dict) -> None:
+    print()
+    print("=" * 65)
+    print(f"OVERALL: {summary['correct']}/{summary['total']} = {summary['accuracy']}%")
+    print("=" * 65)
+    print(f"{'Domain':<28} {'Correct':>7} {'Total':>6} {'Accuracy':>9}")
+    print("-" * 55)
+    for domain, stats in summary["by_domain"].items():
+        bar = "█" * int(stats["accuracy"] / 5)
+        print(
+            f"  {domain:<26} {stats['correct']:>7} {stats['total']:>6} "
+            f"{stats['accuracy']:>8.1f}%  {bar}"
+        )
+    print("=" * 65)
+
+
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--n", type=int, default=None)
-    parser.add_argument("--start", type=int, default=0)
-    parser.add_argument("--domain", type=str, default=None)
-    parser.add_argument("--sample", type=str, default=None)
-    parser.add_argument("--no-llm-judge", action="store_true")
-    parser.add_argument("--quiet", action="store_true")
+    parser = argparse.ArgumentParser(description="Evaluate the reasoning agent on dev data")
+    parser.add_argument("--n",           type=int,  default=None,  help="Number of questions")
+    parser.add_argument("--start",       type=int,  default=0,     help="Start index")
+    parser.add_argument("--domain",      type=str,  default=None,  help="Filter by domain")
+    parser.add_argument("--sample",      type=str,  default=None,  help="'fixed' for fixed 50-question sample")
+    parser.add_argument("--no-llm-judge",action="store_true",      help="Skip LLM judge (faster, less accurate grading)")
+    parser.add_argument("--quiet",       action="store_true",      help="Suppress per-question output")
     args = parser.parse_args()
 
+    print(f"Loading dev data from {DEV_PATH}...")
     dev_data = load_dev_data(DEV_PATH)
+    print(f"Loaded {len(dev_data)} questions.")
+
+    # Determine which questions to evaluate
     if args.sample == "fixed":
-        indices = get_fixed_sample(dev_data, args.n or 50)
+        n = args.n or 50
+        indices = get_fixed_sample(dev_data, n)
+        print(f"Using fixed sample of {len(indices)} questions.")
     elif args.domain:
-        indices = [i for i, item in enumerate(dev_data) if item.get("domain", detect_domain(item["input"])) == args.domain]
-        indices = indices[args.start: (args.start + args.n) if args.n else None]
+        all_indices = [
+            i for i, item in enumerate(dev_data)
+            if item.get("domain", detect_domain(item["input"])) == args.domain
+        ]
+        end = args.start + args.n if args.n else len(all_indices)
+        indices = all_indices[args.start:end]
+        print(f"Filtered to {len(indices)} '{args.domain}' questions.")
     else:
-        end = args.start + (args.n or len(dev_data))
+        end = args.start + args.n if args.n else len(dev_data)
         indices = list(range(args.start, min(end, len(dev_data))))
+        print(f"Evaluating questions {args.start}–{args.start + len(indices) - 1}.")
+
     use_llm_judge = not args.no_llm_judge
+    print(f"LLM judge: {'enabled' if use_llm_judge else 'disabled'}")
+    print()
 
     summary = run_eval(dev_data, indices, use_llm_judge=use_llm_judge, verbose=not args.quiet)
-    print(f"Accuracy: {summary['accuracy']}%")
+    print_summary(summary)
+
     # Save results
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = RESULTS_DIR / f"eval_{ts}.json"
-    with out_path.open("w") as f:
-        json.dump(summary, f)
-    print(f"Results saved to {out_path}")
+    with out_path.open("w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
+
+    # Also save as latest
+    latest_path = RESULTS_DIR / "latest.json"
+    with latest_path.open("w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
+
+    print(f"\nResults saved to {out_path}")
+
 
 if __name__ == "__main__":
     main()
