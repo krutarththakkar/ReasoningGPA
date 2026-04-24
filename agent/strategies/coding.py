@@ -13,6 +13,7 @@ _SYSTEM = (
     "Given a task description, output ONLY the function body. "
     "No function signature, no imports, no markdown code fences, no explanation. "
     "Keep the solution short and close to the requested behavior. "
+    "Do not modernize or improve the task beyond what is asked. "
     "Every line must be indented with at least 4 spaces."
 )
 
@@ -23,6 +24,9 @@ def coding_strategy(question: str) -> str:
         f"{question}\n\n"
         "Return ONLY the indented Python function body that solves this task. "
         "Use the imports, constants, and parameters from the provided starter code. "
+        "Match the examples and requested behavior literally. "
+        "Do not replace named APIs with equivalent alternatives. "
+        "Do not synthesize fallback data or optional branches unless requested. "
         "Do not add extra validation, retries, pagination, logging, printing, "
         "directory creation, comments, or error handling unless the task asks for it. "
         "Do not add None checks or argument guards unless they are requested. "
