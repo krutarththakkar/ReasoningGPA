@@ -10,7 +10,7 @@ import os
 import time
 import requests
 
-API_KEY  = os.getenv("OPENAI_API_KEY", "")
+API_KEY  = "sk-3X-ZR0l-AOofvpds5fhsaA"
 API_BASE = os.getenv("API_BASE", "https://openai.rc.asu.edu/v1")
 MODEL    = os.getenv("MODEL_NAME", "qwen3-30b-a3b-instruct-2507")
 

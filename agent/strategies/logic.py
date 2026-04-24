@@ -1,16 +1,15 @@
 """
-Logic strategy — state tracking, ball swapping, ordering puzzles.
+Logic strategy — ball swapping, ordering, state-tracking puzzles.
 
-Techniques used:
-  - Chain-of-Thought with explicit state tracking T1
-  - Answer Extraction T7
-
-Call budget: 1 call
+Self-consistency is the main move here: these puzzles have a definite
+right answer, so if 2 out of 3 samples agree we can trust it. Falls back
+to a single careful CoT if all 3 samples somehow fail.
 """
 
 from __future__ import annotations
 
 from agent.llm import call_llm, reset_call_count
+from agent.techniques.self_consistency import self_consistency
 from agent.extractor import extract_answer
 
 _SYSTEM = (
@@ -21,11 +20,11 @@ _SYSTEM = (
 
 
 def logic_strategy(question: str) -> str:
-    """
-    Logic strategy:
-    Step-by-step state tracking CoT.
-    """
     reset_call_count()
+
+    sc_answer = self_consistency(question, "logic", n=3)
+    if sc_answer:
+        return sc_answer
 
     prompt = (
         "Solve this logic problem by tracking all state changes step by step.\n\n"
