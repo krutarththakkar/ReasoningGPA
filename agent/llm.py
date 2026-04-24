@@ -7,10 +7,11 @@ No core logic here, just the call, error handling, and rate limiting.
 from __future__ import annotations
 
 import os
+import sys
 import time
 import requests
 
-API_KEY  = "sk-3X-ZR0l-AOofvpds5fhsaA"
+API_KEY  = os.getenv("OPENAI_API_KEY", "sk-3X-ZR0l-AOofvpds5fhsaA")
 API_BASE = os.getenv("API_BASE", "https://openai.rc.asu.edu/v1")
 MODEL    = os.getenv("MODEL_NAME", "qwen3-30b-a3b-instruct-2507")
 
@@ -20,6 +21,11 @@ _RATE_SLEEP = 0.3
 # Per question call counter (reset by strategies)
 _call_count = 0
 MAX_CALLS_PER_QUESTION = 18  # leave buffer below 20
+
+
+def _debug(message: str) -> None:
+    if os.getenv("LLM_DEBUG") == "1":
+        print(f"[llm] {message}", file=sys.stderr)
 
 
 def reset_call_count() -> None:
@@ -47,9 +53,11 @@ def call_llm(
     if _call_count >= MAX_CALLS_PER_QUESTION:
         return ""
 
-    _call_count += 1
-    time.sleep(_RATE_SLEEP)
+    if not API_KEY:
+        _debug("OPENAI_API_KEY is not set")
+        return ""
 
+    _call_count += 1
     url = f"{API_BASE}/chat/completions"
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -65,11 +73,20 @@ def call_llm(
         "max_tokens": max_tokens,
     }
 
-    try:
-        resp = requests.post(url, headers=headers, json=payload, timeout=timeout)
-        if resp.status_code == 200:
+    for attempt in range(2):
+        try:
+            time.sleep(_RATE_SLEEP)
+            resp = requests.post(url, headers=headers, json=payload, timeout=timeout)
+            if resp.status_code != 200:
+                _debug(f"HTTP {resp.status_code} on attempt {attempt + 1}")
+                continue
+
             text = resp.json()["choices"][0]["message"]["content"] or ""
-            return text.strip()
-        return ""
-    except Exception:
-        return ""
+            text = text.strip()
+            if text:
+                return text
+            _debug(f"empty response on attempt {attempt + 1}")
+        except Exception as exc:
+            _debug(f"request failed on attempt {attempt + 1}: {type(exc).__name__}")
+
+    return ""

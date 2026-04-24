@@ -5,11 +5,6 @@ agent.py
 .env.local
 .env.*.local
 
-# Course / project data and submission output (keep large or sensitive JSON local)
-cse476_final_project_dev_data.json
-cse_476_final_project_test_data.json
-cse_476_final_project_answers.json
-
 # Eval outputs
 eval/results/
 eval/fixed_sample_indices.json
@@ -40,5 +35,5 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
-
-agent/strategies/__init__.py
+#Instruction File
+project_instructions.txt
