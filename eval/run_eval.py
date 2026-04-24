@@ -100,7 +100,7 @@ def run_eval(
 
         elapsed = time.time() - t0
 
-        is_correct = grade(question, prediction, expected, use_llm_judge=use_llm_judge)
+        is_correct = grade(question, prediction, expected, use_llm_judge=use_llm_judge, domain=domain)
 
         domain_stats[domain]["total"] += 1
         if is_correct:

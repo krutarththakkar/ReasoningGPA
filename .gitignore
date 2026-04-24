@@ -14,6 +14,9 @@ cse_476_final_project_answers.json
 eval/results/
 eval/fixed_sample_indices.json
 
+# Local experimentation / testbed (not part of the project)
+test_ai/
+
 # Python
 __pycache__/
 *.pyc

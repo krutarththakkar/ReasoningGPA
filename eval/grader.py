@@ -13,13 +13,28 @@ import re
 from agent.extractor import normalize_for_grading, extract_number
 
 
-def grade(question: str, prediction: str, expected: str, use_llm_judge: bool = True) -> bool:
+def grade(
+    question: str,
+    prediction: str,
+    expected: str,
+    use_llm_judge: bool = True,
+    domain: str | None = None,
+) -> bool:
     """
     Grade a prediction against the expected answer.
     Returns True if correct.
     """
     if not prediction:
         return False
+
+    # Strict numeric path — used for math and any expected answer that is just
+    # a number. Skips the LLM judge (which hallucinates on long AIME questions)
+    # and skips substring match (which wrongly says "2" in "112" → True).
+    expected_is_numeric = bool(re.fullmatch(r"\s*-?\d+(?:\.\d+)?\s*", expected or ""))
+    if domain == "math" or expected_is_numeric:
+        pn = extract_number(prediction)
+        en = extract_number(expected)
+        return pn is not None and en is not None and pn == en
 
     # 1. Exact match after normalization
     if normalize_for_grading(prediction) == normalize_for_grading(expected):
