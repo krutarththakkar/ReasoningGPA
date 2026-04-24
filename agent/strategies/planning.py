@@ -15,7 +15,8 @@ _SYSTEM = (
     "You are a careful planner. "
     "Given a planning problem, output ONLY the plan as a sequence of actions. "
     "Each action on its own line, in the form (action arg1 arg2 ...). "
-    "Use lowercase. No numbering, no explanation, no markdown fences."
+    "Use lowercase and only action names from the problem. "
+    "No numbering, no explanation, no markdown fences."
 )
 
 
@@ -35,6 +36,8 @@ def planning_strategy(question: str) -> str:
     prompt = (
         f"{question}\n\n"
         "Return ONLY the plan, one action per line, each like (action arg1 arg2 ...).\n"
+        "Use exact action names from the problem; do not invent wrapper actions like use.\n"
+        "Do not include words like object, from, or another inside action lines.\n"
         "No numbering, no explanation, no markdown."
     )
     raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=1000)
@@ -74,7 +77,11 @@ def _extract_plan(raw: str) -> str:
     # scan the whole text and keep anything that matches the (action args) shape
     # action/arg chars: lowercase letters, digits, hyphens, underscores
     pat = re.compile(r"\([a-zA-Z][\w\-]*(?:\s+[\w\-]+)*\)")
-    actions = [m.group(0).lower() for m in pat.finditer(s)]
+    actions = [
+        action
+        for m in pat.finditer(s)
+        if (action := _clean_action(m.group(0))) is not None
+    ]
     if not actions:
         actions = [
             action
@@ -86,3 +93,13 @@ def _extract_plan(raw: str) -> str:
 
     # expected answers end with a trailing newline — mimic that for exact match
     return "\n".join(actions) + "\n"
+
+
+def _clean_action(action: str) -> str | None:
+    parts = action.strip("()").lower().split()
+    if not parts or parts[0] == "use":
+        return None
+    parts = [p for p in parts if p not in {"object", "from", "another"}]
+    if len(parts) < 2:
+        return None
+    return "(" + " ".join(parts) + ")"
