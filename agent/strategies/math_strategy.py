@@ -20,6 +20,11 @@ from agent.techniques.self_consistency import self_consistency
 from agent.extractor import extract_answer, extract_number
 
 
+def _is_clean_number(s: str) -> bool:
+    """True if s is just a bare number like '42' or '-3.14' with no extra text."""
+    return bool(s) and bool(re.fullmatch(r"\s*-?\d+(?:\.\d+)?\s*", s))
+
+
 def _looks_wrong(answer: str) -> bool:
     """True if the answer doesn't look like a clean numeric result."""
     if not answer:
@@ -44,6 +49,11 @@ def math_strategy(question: str) -> str:
 
     raw_sb = step_back(question)
     sb_answer = extract_answer(raw_sb, "math")
+
+    # if step_back already gave a clean bare number, trust it and skip the 3
+    # self-consistency calls — saves time and those samples drift to LaTeX anyway
+    if _is_clean_number(sb_answer):
+        return sb_answer.strip()
 
     sc_answer = self_consistency(question, "math", n=3)
 
