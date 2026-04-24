@@ -30,7 +30,7 @@ def grade(
     # Strict numeric path — used for math and any expected answer that is just
     # a number. Skips the LLM judge (which hallucinates on long AIME questions)
     # and skips substring match (which wrongly says "2" in "112" → True).
-    expected_is_numeric = bool(re.fullmatch(r"\s*-?\d+(?:\.\d+)?\s*", expected or ""))
+    expected_is_numeric = bool(re.fullmatch(r"\s*-?\d+(?:\.\d+)?\s*", str(expected or "")))
     if domain == "math" or expected_is_numeric:
         pn = extract_number(prediction)
         en = extract_number(expected)

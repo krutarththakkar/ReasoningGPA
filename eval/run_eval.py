@@ -245,8 +245,9 @@ def run_eval(
             mark = "✅" if is_correct else "❌"
             running_correct = sum(1 for r in results if r["correct"])
             route_note = f" -> {routed_domain}" if routed_domain != domain else ""
+            print(f"\n[{rank:3d}/{total}] Q: {question}")
             print(
-                f"{mark} [{rank:3d}/{total}] [{domain:22s}{route_note}] "
+                f"{mark} [{domain:22s}{route_note}] "
                 f"exp={expected!r:12s} got={prediction!r:25s} "
                 f"({elapsed:.1f}s)"
             )

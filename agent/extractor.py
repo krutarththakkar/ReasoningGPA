@@ -207,8 +207,13 @@ def normalize_for_grading(answer: str) -> str:
 
 
 def extract_number(s: str) -> str | None:
-    """Extract the first number from a string."""
+    """Extract the number from a string."""
     if not s:
         return None
-    m = re.search(r"-?\d+(?:\.\d+)?", s)
-    return m.group(0) if m else None
+    s = str(s)
+    if "####" in s:
+        m = re.search(r"####\s*(-?\d+(?:\.\d+)?)", s)
+        if m:
+            return m.group(1)
+    numbers = re.findall(r"-?\d+(?:\.\d+)?", s)
+    return numbers[-1] if numbers else None
