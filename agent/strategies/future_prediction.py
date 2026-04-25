@@ -18,8 +18,8 @@ _SYSTEM = (
 
 def future_prediction_strategy(question: str) -> str:
     reset_call_count()
-    prompt = f"{question}\n\nReason briefly, then end with \\boxed{{YOUR_PREDICTION}}."
-    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=600)
+    prompt = f"{question}\n\nThink step by step about what is most likely to happen. Consider any options given as carefully as you can. Reason briefly, then end with \\boxed{{YOUR_PREDICTION}}. Even if you feel uncertain, always make your best guess and dont leave the \\boxed{{}} empty."
+    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=800)
     return _format_prediction(raw)
 
 
