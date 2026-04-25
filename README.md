@@ -8,7 +8,7 @@ pip install -r requirements.txt
 
 Create .env file
 
-```
+```bash
 # Set your API key (get from Voyager Portal)
 API_KEY="your_key_here"
 API_BASE="https://openai.rc.asu.edu/v1"
