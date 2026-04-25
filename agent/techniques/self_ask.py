@@ -36,7 +36,6 @@ _SYSTEM_SYNTHESIZE = (
     "Give only the shortest possible direct answer — a name, place, year, or brief phrase only. "
     "If the question offers two named choices, you MUST select exactly ONE of the two given options. "
     "Do NOT write 'Neither', 'both', or any explanation. "
-    "Do NOT answer with True or False unless the question explicitly asks for a yes/no confirmation. "
     "State 'Final answer: <answer>' at the very end — where <answer> is the name, word, or brief phrase only."
 )
 
@@ -79,7 +78,7 @@ def resolve_hop(sub_question: str, context: str) -> str:
     return (raw or "").strip()
 
 
-def self_ask(question: str) -> str:
+def self_ask(question: str, is_yes_no: bool = False) -> str:
     """
     Full iterative Self-Ask pipeline.
     Returns raw LLM synthesis text; pass through extract_answer() for cleaning.
@@ -99,11 +98,15 @@ def self_ask(question: str) -> str:
 
     # Phase 3: Synthesize final answer from accumulated context
     context = "\n\n".join(context_lines)
+    sys_msg = _SYSTEM_SYNTHESIZE
+    if is_yes_no:
+        sys_msg += " For Yes/No or True/False questions, your final answer MUST be exactly 'True' or 'False'."
+
     prompt = (
         f"Original question: {question}\n\n"
         f"Established facts obtained step by step:\n{context}\n\n"
         "Based only on these facts, give the single shortest direct answer to the original question. "
-        "If the question names two options, you MUST pick one of the options provided. State '<answer>' at the end "
+        "If the question names two options, you MUST pick one of the options provided. State 'Final answer: <answer>' at the end "
         "where <answer> is a name, word, or brief phrase only, NOT a sentence."
     )
-    return call_llm(prompt, system=_SYSTEM_SYNTHESIZE, temperature=0.0, max_tokens=400)
+    return call_llm(prompt, system=sys_msg, temperature=0.0, max_tokens=400)

@@ -48,7 +48,6 @@ _DOMAIN_HINTS = {
         "Identify the exact entity, date, place, title, demographic, or phrase being asked for. "
         "If the answer is a person, provide their commonly spoken name with their title if applicable. "
         "If the question compares two named choices, compare those choices and pick the one that fits. "
-        "If the question is a Yes/No or True/False question, your final answer MUST be exactly 'True' or 'False'. "
         "If it gives a chain of clues, follow every clue before answering. "
         "State 'Final answer: <answer>' at the end."
     ),
@@ -66,12 +65,15 @@ _MAX_TOKENS = {
 }
 
 
-def chain_of_thought(question: str, domain: str) -> str:
+def chain_of_thought(question: str, domain: str, is_yes_no: bool = False) -> str:
     """
     Single CoT pass. Returns raw LLM response.
     Caller is responsible for extracting the final answer.
     """
     hint = _DOMAIN_HINTS.get(domain, "")
+    if domain == "commonsense" and is_yes_no:
+        hint += " For Yes/No or True/False questions, your final answer MUST be exactly 'True' or 'False'."
+
     max_tokens = _MAX_TOKENS.get(domain, 400)
 
     prompt = f"{hint}\n\nQuestion: {question}\n\nSolve step by step:"

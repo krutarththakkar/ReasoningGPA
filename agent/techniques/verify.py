@@ -14,11 +14,13 @@ _SYSTEM = (
 )
 
 
-def verify(question: str, answer: str) -> bool:
+def verify(question: str, answer: str, raw_reasoning: str = "") -> bool:
+    reasoning_block = f"Proposed logic:\n{raw_reasoning}\n\n" if raw_reasoning else ""
     prompt = (
         f"Question: {question}\n\n"
+        f"{reasoning_block}"
         f"Answer: {answer}\n\n"
-        "Does this answer correctly and completely answer the question? "
+        "Read the reasoning and the answer. Does this answer correctly and completely answer the question? "
         "Reply with only CORRECT or INCORRECT."
     )
     raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=50)

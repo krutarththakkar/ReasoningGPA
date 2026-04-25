@@ -17,11 +17,13 @@ _SYSTEM = (
 )
 
 
-def reflect(question: str, initial_answer: str, domain: str) -> str:
+def reflect(question: str, initial_answer: str, domain: str, raw_reasoning: str = "") -> str:
+    reasoning_block = f"Previous flawed logic:\n{raw_reasoning}\n\n" if raw_reasoning else ""
     prompt = (
         f"Question: {question}\n\n"
+        f"{reasoning_block}"
         f"Proposed answer: {initial_answer}\n\n"
-        "Is this answer correct? If not, what is the correct answer? "
+        "Is this answer correct? If not, identify the mistake in the previous logic if provided, solve the problem, and give the correct answer. "
         "Think carefully and state 'Final answer: <answer>' at the end."
     )
     raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=500)

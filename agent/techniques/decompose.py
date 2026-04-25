@@ -20,13 +20,12 @@ _SYSTEM_COMMONSENSE = (
     "Identify the exact entity, date, place, title, demographic, or phrase being asked for. "
     "If the answer is a person, provide their commonly spoken name with their title if applicable. "
     "If the question compares two named choices, compare those choices and only choose one of the options provided. "
-    "If the question is a Yes/No or True/False question, your final answer MUST be exactly 'True' or 'False'. "
     "If it gives a chain of clues, follow every clue before answering. "
     "State 'Final answer: <answer>' at the very end."
 )
 
 
-def decompose(question: str, domain: str = "word_problem") -> str:
+def decompose(question: str, domain: str = "word_problem", is_yes_no: bool = False, temperature: float = 0.0) -> str:
     """
     Decomposition for word problems and complex trivia.
     Returns raw LLM response.
@@ -42,9 +41,11 @@ def decompose(question: str, domain: str = "word_problem") -> str:
             "Sub-question 3: What is the next logical fact, if needed?\n"
             "Answer 3: [Solve it]\n"
             "Final: Combine the sub-answers to resolve the original question.\n\n"
-            "Work through each step carefully, then state 'Final answer: <answer>'"
+            "Work through each step carefully, then state 'Final answer: <answer>'\n"
         )
         sys_msg = _SYSTEM_COMMONSENSE
+        if is_yes_no:
+            sys_msg += " For Yes/No or True/False questions, your final answer MUST be exactly 'True' or 'False'."
     else:
         prompt = (
             "Break this problem into smaller steps:\n\n"
@@ -60,6 +61,6 @@ def decompose(question: str, domain: str = "word_problem") -> str:
     return call_llm(
         prompt,
         system=sys_msg,
-        temperature=0.0,
+        temperature=temperature,
         max_tokens=600,
     )
