@@ -24,7 +24,29 @@ def coding_strategy(question: str) -> str:
         "Use proper reasoning to validate your answer and make sure you aren't running the code."
     )
     raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=1500)
-    return _extract_code(raw)
+    initial_code = _extract_code(raw)
+
+    # Code Review Subagent
+    reviewer_system = (
+        "You are an expert Code Review Subagent. Your job is to review the code written by a junior developer "
+        "to ensure it STRICTLY matches the requirements of the prompt.\n"
+        "1. Did they add unnecessary comments, prints, or styling/font changes? If so, remove them.\n"
+        "2. Did they hardcode file names or values that weren't explicitly requested? If so, fix them to use the provided constants or parameters.\n"
+        "3. Did they use non-recursive APIs (like os.listdir) when recursive search (os.walk or rglob) was needed? If so, upgrade it.\n"
+        "4. Does the code perfectly match the requested behavior and error messages? If the prompt specifies a ValueError, use that exact logic.\n"
+        "Output ONLY the corrected Python function body inside a ```python block. Do not explain your changes."
+    )
+    
+    reviewer_prompt = (
+        f"QUESTION:\n{question}\n\n"
+        f"JUNIOR DEVELOPER'S CODE:\n{initial_code}\n\n"
+        "Review the code above. If it contains any of the mistakes listed in your system prompt, fix them. "
+        "Return ONLY the corrected indented Python function body inside a ```python block. "
+        "Do not include the def line or imports inside the code block."
+    )
+
+    reviewed_raw = call_llm(reviewer_prompt, system=reviewer_system, temperature=0.0, max_tokens=1500)
+    return _extract_code(reviewed_raw)
 
 
 def _extract_code(raw: str) -> str:
