@@ -39,7 +39,8 @@ def decompose(question: str, domain: str = "word_problem") -> str:
             "Answer 1: [Solve it]\n"
             "Sub-question 2: What is the next logical fact?\n"
             "Answer 2: [Solve it]\n"
-            "(Continue as needed)\n"
+            "Sub-question 3: What is the next logical fact, if needed?\n"
+            "Answer 3: [Solve it]\n"
             "Final: Combine the sub-answers to resolve the original question.\n\n"
             "Work through each step carefully, then state 'Final answer: <answer>'"
         )
@@ -50,7 +51,7 @@ def decompose(question: str, domain: str = "word_problem") -> str:
             f"Problem: {question}\n\n"
             "Step 1: What is the first quantity to find?\n"
             "Step 2: What is the next quantity?\n"
-            "(Continue as needed)\n"
+            "Step 3: What is the next quantity, if needed?\n"
             "Final: Combine results to get the answer.\n\n"
             "Work through each step, then state 'Final answer: <number>'"
         )
