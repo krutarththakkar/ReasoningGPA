@@ -20,6 +20,8 @@ API_KEY  = os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
 API_BASE = os.getenv("API_BASE")
 MODEL    = os.getenv("MODEL") or os.getenv("MODEL_NAME")
 
+
+
 # delay betw calls
 _RATE_SLEEP = 0.3
 

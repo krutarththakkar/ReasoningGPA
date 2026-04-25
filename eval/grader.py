@@ -57,9 +57,10 @@ def grade(
         return True
 
     # 3. Substring match (prediction contains expected or vice versa)
-    if exp_norm and exp_norm in pred_norm:
+    # require the shorter string to be ≥3 chars to prevent single-char false positives
+    if exp_norm and len(exp_norm) >= 3 and exp_norm in pred_norm:
         return True
-    if pred_norm and pred_norm in exp_norm:
+    if pred_norm and len(pred_norm) >= 3 and pred_norm in exp_norm:
         return True
 
     # 4. LLM-as-judge (flexible matching)
