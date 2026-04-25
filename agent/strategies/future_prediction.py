@@ -26,7 +26,7 @@ def future_prediction_strategy(question: str) -> str:
         correct = verify(question, prediction)
         if not correct:
             try_again = (
-                f"{question}\n\nYour previous prediction may have been wrong. Think again carefully and make a new prediction. Make sure to end with \\boxed{{YOUR_PREDICTION}}."
+                f"{question}\n\nYour previous prediction may have been wrong. Think again carefully and make a new prediction. You must consider both positive and negative outcomes because either case could be the answer. Make sure to end with \\boxed{{YOUR_PREDICTION}}."
             )
             raw = call_llm(try_again, system=_SYSTEM, temperature=0.0, max_tokens=800)
             retry_prediction = _format_prediction(raw)

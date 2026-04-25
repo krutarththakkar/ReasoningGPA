@@ -46,10 +46,10 @@ Run `python -m pytest agent/tests/test_extractor.py` — all extraction patterns
 This is the baseline we measure everything against.
 
 ### Tasks
-- [ ] Write `agent/techniques/cot.py`
-- [ ] Write one strategy per domain (all using CoT, no fancy techniques yet)
-- [ ] Wire up `agent/__init__.py` with `agent_loop()`
-- [ ] Update `generate_answer_template.py` to import from `agent/`
+- [x] Write `agent/techniques/cot.py`
+- [x] Write one strategy per domain (all using CoT, no fancy techniques yet)
+- [x] Wire up `agent/__init__.py` with `agent_loop()`
+- [x] Update `generate_answer_template.py` to import from `agent/`
 
 ### Acceptance Test
 Run `python eval/run_eval.py --n 50 --sample fixed_50` and record baseline accuracy.
@@ -69,11 +69,11 @@ Expected: ~40-50% overall (math will be low, easy domains will be high).
 - Needs self-refine when answer looks wrong
 
 ### Tasks
-- [ ] Write `agent/techniques/step_back.py`
-- [ ] Write `agent/techniques/self_refine.py`
-- [ ] Write `agent/strategies/math_strategy.py` using step-back + self-refine
-- [ ] Tune `max_tokens` for math (target: 1200)
-- [ ] Tune answer extraction for math-specific formats (\\boxed{}, "m+n=", etc.)
+- [x] Write `agent/techniques/step_back.py`
+- [x] Write `agent/techniques/self_refine.py`
+- [x] Write `agent/strategies/math_strategy.py` using step-back + self-refine
+- [x] Tune `max_tokens` for math (target: 1200)
+- [x] Tune answer extraction for math-specific formats (\\boxed{}, "m+n=", etc.)
 
 ### Acceptance Test
 Run `python eval/run_eval.py --n 50 --domain math` — math accuracy ≥ 45%.
@@ -92,10 +92,10 @@ Run `python eval/run_eval.py --n 50 --domain math` — math accuracy ≥ 45%.
 - Numbers in text need careful extraction
 
 ### Tasks
-- [ ] Write `agent/techniques/decompose.py`
-- [ ] Write `agent/strategies/word_problem.py` using decomposition
-- [ ] Add multilingual handling (detect non-English, add translation hint to prompt)
-- [ ] Tune number extraction in `extractor.py`
+- [x] Write `agent/techniques/decompose.py`
+- [x] Write `agent/strategies/word_problem.py` using decomposition
+- [x] Add multilingual handling (detect non-English, add translation hint to prompt)
+- [x] Tune number extraction in `extractor.py`
 
 ### Acceptance Test
 Run `python eval/run_eval.py --n 50 --domain word_problem` — accuracy ≥ 75%.
@@ -110,11 +110,11 @@ Run `python eval/run_eval.py --n 50 --domain word_problem` — accuracy ≥ 75%.
 
 ### Tasks
 - [ ] Write `agent/techniques/few_shot.py` with domain-specific examples
-- [ ] Write `agent/strategies/mcq.py` — few-shot + letter extraction
-- [ ] Write `agent/strategies/true_false.py` — few-shot + yes/no extraction
-- [ ] Write `agent/strategies/reading_comp.py` — direct span extraction
-- [ ] Write `agent/strategies/logic.py` — step-by-step state trace
-- [ ] Write `agent/strategies/commonsense.py` — CoT
+- [x] Write `agent/strategies/mcq.py` — few-shot + letter extraction
+- [x] Write `agent/strategies/true_false.py` — few-shot + yes/no extraction
+- [x] Write `agent/strategies/reading_comp.py` — direct span extraction
+- [x] Write `agent/strategies/logic.py` — step-by-step state trace
+- [x] Write `agent/strategies/commonsense.py` — CoT
 
 ### Acceptance Test
 Run `python eval/run_eval.py --n 50 --domain science_mcq` — ≥ 85%
@@ -130,11 +130,11 @@ Run `python eval/run_eval.py --n 50 --domain reading_comprehension` — ≥ 80%
 **Goal**: Solid eval tooling so we can measure progress reliably.
 
 ### Tasks
-- [ ] Write `eval/run_eval.py` — configurable eval runner
-- [ ] Write `eval/grader.py` — exact match + LLM judge
-- [ ] Write `eval/analyze_failures.py` — failure pattern analysis
-- [ ] Create `eval/results/` directory with gitkeep
-- [ ] Define a fixed 50-question sample for consistent comparison across runs
+- [x] Write `eval/run_eval.py` — configurable eval runner
+- [x] Write `eval/grader.py` — exact match + LLM judge
+- [x] Write `eval/analyze_failures.py` — failure pattern analysis
+- [x] Create `eval/results/` directory with gitkeep
+- [x] Define a fixed 50-question sample for consistent comparison across runs
 
 ### Acceptance Test
 `python eval/run_eval.py --n 50` produces a JSON results file and prints per-domain accuracy.
@@ -152,7 +152,7 @@ Run `python eval/run_eval.py --n 50 --domain reading_comprehension` — ≥ 80%
 - [ ] Re-run and confirm improvement
 
 ### Acceptance Test
-Overall dev accuracy ≥ 65%.
+Overall dev accuracy ≥ 80%.
 
 ---
 
