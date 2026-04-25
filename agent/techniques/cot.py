@@ -45,7 +45,11 @@ _DOMAIN_HINTS = {
         "State 'Final answer: Yes' or 'Final answer: No' at the end."
     ),
     "commonsense": (
-        "Use common sense reasoning. "
+        "Identify the exact entity, date, place, title, demographic, or phrase being asked for. "
+        "If the answer is a person, provide their commonly spoken name with their title if applicable. "
+        "If the question compares two named choices, compare those choices and pick the one that fits. "
+        "If the question is a Yes/No or True/False question, your final answer MUST be exactly 'True' or 'False'. "
+        "If it gives a chain of clues, follow every clue before answering. "
         "State 'Final answer: <answer>' at the end."
     ),
 }
@@ -58,7 +62,7 @@ _MAX_TOKENS = {
     "science_mcq": 300,
     "logic": 400,
     "true_false": 200,
-    "commonsense": 300,
+    "commonsense": 500,
 }
 
 
