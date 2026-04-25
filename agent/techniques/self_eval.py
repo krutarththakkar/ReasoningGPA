@@ -28,9 +28,11 @@ def self_evaluate(question: str, prediction: str, expected: str = "", domain: st
             f"EXPECTED CODE:\n{expected}\n\n"
             f"PREDICTED CODE:\n{prediction}\n\n"
             "You are an expert Python grader. Analyze the EXPECTED code and the PREDICTED code. "
-            "If the PREDICTED code achieves the exact same functional outcome as the EXPECTED code for the given question, "
-            "return True. It is okay if they use different variable names, different spacing, or valid equivalent APIs. "
-            "A prediction is WRONG if it has syntax errors, misses required constraints, or produces different output. "
+            "If the PREDICTED code perfectly solves the stated QUESTION, return True. "
+            "The EXPECTED code is just one possible solution. Do not penalize the PREDICTED code if it "
+            "omits unstated error handling, uses different variable names, uses non-recursive functions when recursion isn't explicitly asked for, "
+            "or misses extra features (like specific error messages or constraints) that are present in the EXPECTED code but NOT explicitly required by the QUESTION. "
+            "Return True if the logic fundamentally satisfies the core QUESTION. "
             "Reply with exactly: True or False"
         )
     elif expected:
