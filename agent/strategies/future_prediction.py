@@ -12,7 +12,7 @@ from agent.llm import call_llm, reset_call_count
 _SYSTEM = (
     "You are a careful predictor. Make a confident best-guess prediction. "
     "Follow any format instructions in the question, and always end your "
-    "response with \\boxed{YOUR_PREDICTION}."
+    "response with \\boxed{YOUR_PREDICTION}. You must choose to predict and if you are uncertain, then just make your best guess. Don't leave the \\boxed{} blank."
 )
 
 
@@ -29,6 +29,10 @@ def _format_prediction(raw: str) -> str:
         return ""
     matches = re.findall(r"\\boxed\{([^{}]*)\}", raw)
     if not matches:
+        for line in reversed(raw.split("\n")): 
+            output = line.strip()
+            if output:
+                return f"['{output}']" #last nonempty line
         return ""
     content = matches[-1].strip()
     if not content:
