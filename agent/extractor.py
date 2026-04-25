@@ -180,13 +180,6 @@ def _domain_clean(candidate: str, domain: str) -> str:
         if lower.startswith("no"):
             return "No"
 
-    if domain == "commonsense":
-        lower = candidate.lower().strip()
-        if lower.startswith("yes"):
-            return "True"
-        if lower.startswith("no"):
-            return "False"
-
     if domain == "math":
         # Strip trailing punctuation and whitespace
         candidate = candidate.rstrip(".,;:")
