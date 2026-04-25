@@ -32,6 +32,16 @@ The agent aims to implement 9 inference-time techniques:
 | 8   | **Verification Pass**           | Checks whether the answer satisfies question constraints                                                                                          |
 | 9   | **Answer Extraction**           | Post-processes raw LLM output to return a clean final answer                                                                                      |
 
+## Recommended Reading
+
+A curated list of foundational papers and talks on LLM reasoning and agents:
+
+- [The Bitter Lesson](http://www.incompleteideas.net/IncIdeas/BitterLesson.html) - Rich Sutton
+- [Learning to Self-Improve & Reason with LLMs](https://rdi.berkeley.edu/adv-llm-agents/slides/Jason-Weston-Reasoning-Alignment-Berkeley-Talk.pdf) - Berkeley RDI
+- [LLM Reasoning: Key Ideas and Limitations](https://rdi.berkeley.edu/llm-agents/assets/llm-reasoning.pdf) - Berkeley RDI
+- [Reasoning and Agents](https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1246/slides/cs224n-spr2024-lecture14-agents-shikhar-updated.pdf) - Natural Language Processing with Deep Learning CS224N/Ling284
+- [Inference-Time Techniques for LLM Reasoning](https://rdi.berkeley.edu/adv-llm-agents/slides/inference_time_techniques_lecture_sp25.pdf) - Berkeley RDI
+
 ## Strategy per Domain
 
 | Domain                  | Strategy                                                              |
