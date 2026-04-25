@@ -27,7 +27,12 @@ def self_evaluate(question: str, prediction: str, expected: str = "") -> bool:
             f"QUESTION: {question[:400]}\n\n"
             f"PREDICTION: {prediction}\n\n"
             f"EXPECTED: {expected}\n\n"
-            "Is the prediction correct for this question? "
+            "Is the prediction semantically correct for this question? "
+            "Important rules:\n"
+            "- Partial names are correct if they clearly identify the same person (e.g. 'Richard Nixon' matches 'President Richard Nixon').\n"
+            "- Alternate but equivalent phrasings are correct (e.g. 'ethyl alcohol' matches 'alcohol').\n"
+            "- A city name without a country/state qualifier is correct if it unambiguously identifies the same place.\n"
+            "- Do NOT penalize for omitting titles like 'President', 'Dr.', 'Sir' unless the question specifically asks for the title.\n"
             "Reply with exactly: True or False"
         )
     else:

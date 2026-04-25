@@ -51,7 +51,8 @@ def extract_answer(raw: str, domain: str) -> str:
     try:
         raw_ans = call_llm(prompt, temperature=0.0, max_tokens=50)
         ans = raw_ans.strip()
-        if ans and len(ans) < 100:
+        # Reject explicit non-answers the extractor LLM is instructed to output
+        if ans and ans.upper() not in ("NOTHING", "NONE", "UNKNOWN", "N/A") and len(ans) < 100:
             cleaned = _domain_clean(ans, domain)
             if cleaned:
                 return cleaned
@@ -124,8 +125,9 @@ def extract_answer(raw: str, domain: str) -> str:
 def _domain_specific(text: str, domain: str) -> str:
     """Domain-specific extraction patterns."""
 
-    if domain in ("science_mcq", "logic", "commonsense"):
+    if domain in ("science_mcq", "logic"):
         # Extract single letter answer: "B", "(B)", "B.", "B)"
+        # commonsense is excluded — its answers are names/phrases, never A-D letters
         m = re.search(r"(?:^|\s|\()([A-D])(?:\)|\.|\s|$)", text)
         if m:
             return m.group(1).upper()
