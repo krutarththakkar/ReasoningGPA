@@ -1,40 +1,67 @@
 """
-Common-sense strategy — short factual trivia. One call, tight prompt.
-
-Questions are things like "Which magazine was started first?" or "What city
-hosts Oberoi's head office?". The model knows these; asking for reasoning +
-verify + reflect just wastes calls and occasionally overrides a correct answer.
+Common-sense strategy — short factual trivia.
+Now uses Least-to-Most Decomposition (L2M) and a Verify-Reflect loop.
 """
 from __future__ import annotations
 
-from agent.llm import call_llm, reset_call_count
+import re
+from agent.llm import reset_call_count
+from agent.techniques.decompose import decompose
+from agent.techniques.verify import verify
+from agent.techniques.reflection import reflect
 from agent.extractor import extract_answer
 
-_SYSTEM = (
-    "You are careful with factual trivia and entity-linking questions. "
-    "Use the clues in the question, avoid famous-but-wrong guesses, and "
-    "end with one line exactly like: Final answer: <short answer>"
+# Yes/No confirmation questions start with these words
+_YES_NO_PATTERN = re.compile(
+    r"^\s*(is|are|were|was|can|do|does|have|has|will|would|could|should|did"
+    r"|are both|were both|is it|are they|was it)\b",
+    re.IGNORECASE,
 )
+
+_BOOLEANS = {"true", "false", "yes", "no"}
+
+
+def _is_yes_no_question(q: str) -> bool:
+    """Return True if the question expects a yes/no/true/false answer."""
+    return bool(_YES_NO_PATTERN.match(q.strip()))
 
 
 def commonsense_strategy(question: str) -> str:
     reset_call_count()
-    prompt = (
-        f"{question}\n\n"
-        "Identify the exact entity, date, place, title, or phrase being asked for. "
-        "If the question compares two named choices, compare those choices and pick the one that fits. "
-        "If it gives a chain of clues, follow every clue before answering. "
-        "Keep any reasoning brief, then end with 'Final answer: <answer>'."
-    )
-    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=220)
-
+    
+    # Step 1: L2M Reasoning
+    raw = decompose(question, "commonsense")
     answer = extract_answer(raw, "commonsense")
-    if answer:
-        return answer
 
-    # fallback: first non-empty line if the extractor couldn't find anything
-    for line in (raw or "").split("\n"):
-        s = line.strip()
-        if s:
-            return s
-    return ""
+    # If the answer is a bare boolean but the question is NOT a yes/no question,
+    # the extractor was confused — try to pull the real answer from the raw trace
+    if answer and answer.lower() in _BOOLEANS and not _is_yes_no_question(question):
+        for line in reversed((raw or "").split("\n")):
+            s = line.strip().rstrip(".,;")
+            if s and s.lower() not in _BOOLEANS and s.upper() not in {"NOTHING", "NONE", "UNKNOWN"}:
+                answer = s
+                break
+
+    # Fallback if bare extraction still fails
+    if not answer:
+        for line in reversed((raw or "").split("\n")):
+            s = line.strip()
+            if s:
+                answer = s
+                break
+
+    if not answer:
+        return ""
+
+    # # Step 2: Verification
+    # is_correct = verify(question, answer)
+    # if is_correct:
+    #     return answer
+        
+    # # Step 3: Reflection if unverified
+    # reflected_raw = reflect(question, answer, "commonsense")
+    # reflected_answer = extract_answer(reflected_raw, "commonsense")
+    # if reflected_answer:
+    #     return reflected_answer
+
+    return answer

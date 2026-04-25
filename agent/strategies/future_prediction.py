@@ -8,20 +8,31 @@ from __future__ import annotations
 import re
 
 from agent.llm import call_llm, reset_call_count
+from agent.techniques.verify import verify #have to import it in
 
 _SYSTEM = (
     "You are a careful predictor. Make a confident best-guess prediction. "
     "Follow any format instructions in the question, and always end your "
-    "response with \\boxed{YOUR_PREDICTION}."
+    "response with \\boxed{YOUR_PREDICTION}. You must choose to predict and if you are uncertain, then just make your best guess. Don't leave the \\boxed{} blank."
 )
 
 
 def future_prediction_strategy(question: str) -> str:
     reset_call_count()
-    prompt = f"{question}\n\nReason briefly, then end with \\boxed{{YOUR_PREDICTION}}."
-    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=600)
-    return _format_prediction(raw)
-
+    prompt = f"{question}\n\nThink step by step about what is most likely to happen. Consider any options given as carefully as you can. Reason briefly, then end with \\boxed{{YOUR_PREDICTION}}. Even if you feel uncertain, always make your best guess and dont leave the \\boxed{{}} empty."
+    raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=800)
+    prediction = _format_prediction(raw)
+    if prediction and len(prediction) < 40: #making the LLM check itself
+        correct = verify(question, prediction)
+        if not correct:
+            try_again = (
+                f"{question}\n\nYour previous prediction may have been wrong. Think again carefully and make a new prediction. Make sure to end with \\boxed{{YOUR_PREDICTION}}."
+            )
+            raw = call_llm(try_again, system=_SYSTEM, temperature=0.0, max_tokens=800)
+            retry_prediction = _format_prediction(raw)
+            if retry_prediction:
+                prediction = retry_prediction
+    return prediction
 
 def _format_prediction(raw: str) -> str:
     """Pull content from the LAST \\boxed{...} and wrap it as a Python list string."""
@@ -29,6 +40,10 @@ def _format_prediction(raw: str) -> str:
         return ""
     matches = re.findall(r"\\boxed\{([^{}]*)\}", raw)
     if not matches:
+        for line in reversed(raw.split("\n")): 
+            output = line.strip()
+            if output:
+                return f"['{output}']" #last nonempty line
         return ""
     content = matches[-1].strip()
     if not content:

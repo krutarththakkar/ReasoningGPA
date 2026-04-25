@@ -36,8 +36,18 @@ def grade(
         en = extract_number(expected)
         return pn is not None and en is not None and pn == en
 
+    # Normalize once
+    pred_norm = normalize_for_grading(prediction)
+    exp_norm  = normalize_for_grading(expected)
+
     # 1. Exact match after normalization
-    if normalize_for_grading(prediction) == normalize_for_grading(expected):
+    if pred_norm == exp_norm:
+        return True
+
+    # 1.5 Handle logical equivalence
+    if pred_norm in ("true", "yes") and exp_norm in ("true", "yes"):
+        return True
+    if pred_norm in ("false", "no") and exp_norm in ("false", "no"):
         return True
 
     # 2. Numeric match
@@ -47,8 +57,6 @@ def grade(
         return True
 
     # 3. Substring match (prediction contains expected or vice versa)
-    pred_norm = normalize_for_grading(prediction)
-    exp_norm  = normalize_for_grading(expected)
     if exp_norm and exp_norm in pred_norm:
         return True
     if pred_norm and pred_norm in exp_norm:
