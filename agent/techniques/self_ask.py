@@ -103,7 +103,7 @@ def self_ask(question: str) -> str:
         f"Original question: {question}\n\n"
         f"Established facts obtained step by step:\n{context}\n\n"
         "Based only on these facts, give the single shortest direct answer to the original question. "
-        "If the question names two options, you MUST pick one of the options provided. State '<answer>' at the end "
+        "If the question names two options, you MUST pick exactly one of the two options. Do not say 'neither' or 'both' or 'it depends'. State '<answer>' at the end "
         "where <answer> is a name, word, or brief phrase only, NOT a sentence."
     )
     return call_llm(prompt, system=_SYSTEM_SYNTHESIZE, temperature=0.0, max_tokens=400)
