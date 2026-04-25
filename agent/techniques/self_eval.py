@@ -17,12 +17,23 @@ _SYSTEM = (
 )
 
 
-def self_evaluate(question: str, prediction: str, expected: str = "") -> bool:
+def self_evaluate(question: str, prediction: str, expected: str = "", domain: str = "") -> bool:
     """
     Ask the model if the prediction is correct.
     Returns True if correct, False otherwise (including when the judge's reply is ambiguous).
     """
-    if expected:
+    if domain == "coding" and expected:
+        prompt = (
+            f"QUESTION: {question[:800]}\n\n"
+            f"EXPECTED CODE:\n{expected}\n\n"
+            f"PREDICTED CODE:\n{prediction}\n\n"
+            "You are an expert Python grader. Analyze the EXPECTED code and the PREDICTED code. "
+            "If the PREDICTED code achieves the exact same functional outcome as the EXPECTED code for the given question, "
+            "return True. It is okay if they use different variable names, different spacing, or valid equivalent APIs. "
+            "A prediction is WRONG if it has syntax errors, misses required constraints, or produces different output. "
+            "Reply with exactly: True or False"
+        )
+    elif expected:
         prompt = (
             f"QUESTION: {question[:400]}\n\n"
             f"PREDICTION: {prediction}\n\n"

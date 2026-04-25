@@ -27,6 +27,15 @@ def grade(
     if not prediction:
         return False
 
+    # Coding path — skips trivia normalizations that destroy Python syntax
+    if domain == "coding":
+        if prediction.strip() == expected.strip():
+            return True
+        if use_llm_judge:
+            from agent.techniques.self_eval import self_evaluate
+            return self_evaluate(question, prediction, expected, domain="coding")
+        return False
+
     # Strict numeric path — used for math and any expected answer that is just
     # a number. Skips the LLM judge (which hallucinates on long AIME questions)
     # and skips substring match (which wrongly says "2" in "112" → True).
@@ -66,6 +75,6 @@ def grade(
     # 4. LLM-as-judge (flexible matching)
     if use_llm_judge:
         from agent.techniques.self_eval import self_evaluate
-        return self_evaluate(question, prediction, expected)
+        return self_evaluate(question, prediction, expected, domain=domain or "")
 
     return False
