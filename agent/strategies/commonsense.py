@@ -1,14 +1,16 @@
 """
 Common-sense strategy — short factual trivia.
-Now uses Least-to-Most Decomposition (L2M) and a Verify-Reflect loop.
+
+Routing:
+  - Yes/No questions  → single L2M decompose call (fast, 1 call)
+  - Entity questions  → iterative Self-Ask agent (robust, ≤5 calls)
 """
 from __future__ import annotations
 
 import re
 from agent.llm import reset_call_count
 from agent.techniques.decompose import decompose
-from agent.techniques.verify import verify
-from agent.techniques.reflection import reflect
+from agent.techniques.self_ask import self_ask
 from agent.extractor import extract_answer
 
 # Yes/No confirmation questions start with these words
@@ -26,42 +28,54 @@ def _is_yes_no_question(q: str) -> bool:
     return bool(_YES_NO_PATTERN.match(q.strip()))
 
 
-def commonsense_strategy(question: str) -> str:
-    reset_call_count()
-    
-    # Step 1: L2M Reasoning
-    raw = decompose(question, "commonsense")
+def _contains_only_boolean(s: str) -> bool:
+    """Return True if a line is (or contains) only a bare boolean with no real content."""
+    cleaned = s.lower().strip()
+    # Exact match
+    if cleaned in _BOOLEANS:
+        return True
+    # Compound patterns like "final answer: false", "answer: true", "the answer is no"
+    for b in _BOOLEANS:
+        if re.fullmatch(rf"(final\s+)?answer\s*[:\-]?\s*{b}", cleaned):
+            return True
+    return False
+
+
+def _extract_with_fallback(raw: str, question: str) -> str:
+    """Extract answer and apply boolean-rejection guard for entity questions."""
     answer = extract_answer(raw, "commonsense")
 
-    # If the answer is a bare boolean but the question is NOT a yes/no question,
-    # the extractor was confused — try to pull the real answer from the raw trace
-    if answer and answer.lower() in _BOOLEANS and not _is_yes_no_question(question):
+    # If it returned a bare boolean but this isn't a yes/no question,
+    # walk backward through the raw trace and find the real answer
+    if answer and _contains_only_boolean(answer) and not _is_yes_no_question(question):
+        answer = ""
         for line in reversed((raw or "").split("\n")):
             s = line.strip().rstrip(".,;")
-            if s and s.lower() not in _BOOLEANS and s.upper() not in {"NOTHING", "NONE", "UNKNOWN"}:
+            if s and not _contains_only_boolean(s) and s.upper() not in {"NOTHING", "NONE", "UNKNOWN"}:
                 answer = s
                 break
 
-    # Fallback if bare extraction still fails
+    # General fallback: take the last non-empty, non-boolean line from raw
     if not answer:
         for line in reversed((raw or "").split("\n")):
             s = line.strip()
-            if s:
+            if s and (not _is_yes_no_question(question) or not _contains_only_boolean(s)):
                 answer = s
                 break
 
-    if not answer:
-        return ""
-
-    # # Step 2: Verification
-    # is_correct = verify(question, answer)
-    # if is_correct:
-    #     return answer
-        
-    # # Step 3: Reflection if unverified
-    # reflected_raw = reflect(question, answer, "commonsense")
-    # reflected_answer = extract_answer(reflected_raw, "commonsense")
-    # if reflected_answer:
-    #     return reflected_answer
-
     return answer
+
+
+def commonsense_strategy(question: str) -> str:
+    reset_call_count()
+
+    if _is_yes_no_question(question):
+        # Fast path: yes/no questions don't need multi-hop chain resolution
+        raw = decompose(question, "commonsense")
+    else:
+        # Multi-hop path: iterative Self-Ask for entity/fact questions
+        raw = self_ask(question)
+
+    answer = _extract_with_fallback(raw, question)
+    return answer or ""
+
