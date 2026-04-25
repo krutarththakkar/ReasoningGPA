@@ -15,10 +15,11 @@ from pathlib import Path
 import requests
 
 load_dotenv()
+API_KEY  = os.getenv("OPENAI_API_KEY", "yourkeyhere")
+API_BASE = os.getenv("API_BASE", "https://openai.rc.asu.edu/v1")
+MODEL    = os.getenv("MODEL_NAME", "qwen3-30b-a3b-instruct-2507")
 
-API_KEY  = os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
-API_BASE = os.getenv("API_BASE")
-MODEL    = os.getenv("MODEL") or os.getenv("MODEL_NAME")
+
 
 # delay betw calls
 _RATE_SLEEP = 0.3

@@ -62,6 +62,8 @@ NORMALIZE_CASES = [
     ("The answer is 112.", "the answer is 112"),
     ("stay the same", "stay the same"),
     ("SECOND", "second"),
+    (True, "true"),
+    (False, "false"),
 ]
 
 NUMBER_CASES = [
