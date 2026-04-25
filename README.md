@@ -4,42 +4,45 @@
 
 ```bash
 pip install -r requirements.txt
+```
 
+Create .env file
+
+```
 # Set your API key (get from Voyager Portal)
-export OPENAI_API_KEY="your_key_here"
-
-# Optional overrides
-export API_BASE="https://openai.rc.asu.edu/v1"
-export MODEL_NAME="qwen3-30b-a3b-instruct-2507"
+API_KEY="your_key_here"
+API_BASE="https://openai.rc.asu.edu/v1"
+MODEL_NAME="qwen3-30b-a3b-instruct-2507"
+LLM_DEBUG=0
 ```
 
 ## Agent Architecture
 
 The agent aims to implement 9 inference-time techniques:
 
-| # | Technique | Description |
-|---|-----------|-------------|
-| 1 | **Domain-Aware Routing** | Classifies question type (math, word_problem, reading_comprehension, science_mcq, logic, commonsense, true_false) and routes to the best strategy |
-| 2 | **Chain-of-Thought (CoT)** | Step-by-step reasoning with explicit "Final answer:" extraction |
-| 3 | **Self-Consistency** | Samples 3 answers at temperature=0.7, returns majority vote (math, logic) |
-| 4 | **Step-Back Prompting** | Derives relevant mathematical principles first, then solves (hard math) |
-| 5 | **Least-to-Most Decomposition** | Breaks multi-step word problems into sub-problems |
-| 6 | **Few-Shot Exemplars** | Injects domain-specific in-context examples |
-| 7 | **Reflection / Self-Critique** | Re-examines initial answer and corrects if needed |
-| 8 | **Verification Pass** | Checks whether the answer satisfies question constraints |
-| 9 | **Answer Extraction** | Post-processes raw LLM output to return a clean final answer |
+| #   | Technique                       | Description                                                                                                                                       |
+| --- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Domain-Aware Routing**        | Classifies question type (math, word_problem, reading_comprehension, science_mcq, logic, commonsense, true_false) and routes to the best strategy |
+| 2   | **Chain-of-Thought (CoT)**      | Step-by-step reasoning with explicit "Final answer:" extraction                                                                                   |
+| 3   | **Self-Consistency**            | Samples 3 answers at temperature=0.7, returns majority vote (math, logic)                                                                         |
+| 4   | **Step-Back Prompting**         | Derives relevant mathematical principles first, then solves (hard math)                                                                           |
+| 5   | **Least-to-Most Decomposition** | Breaks multi-step word problems into sub-problems                                                                                                 |
+| 6   | **Few-Shot Exemplars**          | Injects domain-specific in-context examples                                                                                                       |
+| 7   | **Reflection / Self-Critique**  | Re-examines initial answer and corrects if needed                                                                                                 |
+| 8   | **Verification Pass**           | Checks whether the answer satisfies question constraints                                                                                          |
+| 9   | **Answer Extraction**           | Post-processes raw LLM output to return a clean final answer                                                                                      |
 
 ## Strategy per Domain
 
-| Domain | Strategy |
-|--------|----------|
-| `math` | Step-Back → Self-Consistency (3 samples) → Reflection if disagreement |
-| `word_problem` | Decomposition + CoT → Reflection if disagreement |
-| `reading_comprehension` | Few-Shot + CoT |
-| `science_mcq` | Few-Shot + CoT → Reflection for letter extraction |
-| `logic` | Self-Consistency (3 samples) → CoT fallback |
-| `true_false` | Few-Shot + CoT |
-| `commonsense` | CoT → Verification → Reflection if unverified |
+| Domain                  | Strategy                                                              |
+| ----------------------- | --------------------------------------------------------------------- |
+| `math`                  | Step-Back → Self-Consistency (3 samples) → Reflection if disagreement |
+| `word_problem`          | Decomposition + CoT → Reflection if disagreement                      |
+| `reading_comprehension` | Few-Shot + CoT                                                        |
+| `science_mcq`           | Few-Shot + CoT → Reflection for letter extraction                     |
+| `logic`                 | Self-Consistency (3 samples) → CoT fallback                           |
+| `true_false`            | Few-Shot + CoT                                                        |
+| `commonsense`           | Decomposition → Verification → Reflection if unverified               |
 
 ## LLM Call Budget
 
