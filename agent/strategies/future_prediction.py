@@ -173,7 +173,6 @@ def _boxed_choices(question: str) -> list[str]:
         for x in re.findall(r"\\boxed\{([^{}]+)\}", question)
         if "YOUR_PREDICTION" not in x
     ]
-    # Option prompts include examples like \boxed{A}; do not treat those as choices.
     if choices and all(re.fullmatch(r"[A-Z](?:,\s*[A-Z])*", x) for x in choices):
         return []
     return choices
