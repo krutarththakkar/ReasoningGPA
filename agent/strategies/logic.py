@@ -9,6 +9,7 @@ to a single careful CoT if all 3 samples somehow fail.
 from __future__ import annotations
 
 from agent.llm import call_llm, reset_call_count
+from agent.techniques.debate import debate
 from agent.techniques.self_consistency import self_consistency
 from agent.extractor import extract_answer
 
@@ -21,6 +22,10 @@ _SYSTEM = (
 
 def logic_strategy(question: str) -> str:
     reset_call_count()
+
+    debated = debate(question, "logic")
+    if debated:
+        return debated
 
     sc_answer = self_consistency(question, "logic", n=3)
     if sc_answer:

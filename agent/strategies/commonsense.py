@@ -7,6 +7,7 @@ from __future__ import annotations
 import re
 from agent.llm import reset_call_count
 from agent.techniques.cot import chain_of_thought
+from agent.techniques.debate import debate
 from agent.extractor import extract_answer
 
 # Yes/No confirmation questions start with these words
@@ -35,15 +36,19 @@ def _is_boolean_answer(s: str) -> bool:
     return False
 
 
-def commonsense_strategy(question: str) -> str:
-    reset_call_count()
-    is_yn = _is_yes_no_question(question)
+def _should_debate(question: str) -> bool:
+    q = question.lower()
+    return bool(
+        re.search(
+            r"options?:|\([a-d]\)|similar to|most likely|\bbest\b|\bwhich\b|find a|choose",
+            q,
+        )
+    )
 
-    # Pass in `is_yn` dynamically. This is critical to avoid False Positives!
-    raw = chain_of_thought(question, "commonsense")
+
+def _extract_with_guard(raw: str, question: str, is_yn: bool) -> str:
     answer = extract_answer(raw, "commonsense")
 
-    # Boolean rejection guard
     if answer and _is_boolean_answer(answer) and not is_yn:
         answer = ""
         for line in reversed((raw or "").split("\n")):
@@ -60,3 +65,16 @@ def commonsense_strategy(question: str) -> str:
                 break
 
     return answer or ""
+
+
+def commonsense_strategy(question: str) -> str:
+    reset_call_count()
+    is_yn = _is_yes_no_question(question)
+
+    if not is_yn and _should_debate(question):
+        debated = debate(question, "commonsense")
+        if debated and not _is_boolean_answer(debated):
+            return debated
+
+    raw = chain_of_thought(question, "commonsense")
+    return _extract_with_guard(raw, question, is_yn)
