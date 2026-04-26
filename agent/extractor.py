@@ -48,16 +48,16 @@ def extract_answer(raw: str, domain: str) -> str:
         f"Reasoning:\n{text}"
     )
     
-    try:
-        raw_ans = call_llm(prompt, temperature=0.0, max_tokens=50)
-        ans = raw_ans.strip()
-        # Reject explicit non-answers the extractor LLM is instructed to output
-        if ans and ans.upper() not in ("NOTHING", "NONE", "UNKNOWN", "N/A") and len(ans) < 100:
-            cleaned = _domain_clean(ans, domain)
-            if cleaned:
-                return cleaned
-    except Exception:
-        pass
+    # try:
+    #     raw_ans = call_llm(prompt, temperature=0.5, max_tokens=50)
+    #     ans = raw_ans.strip()
+    #     # Reject explicit non-answers the extractor LLM is instructed to output
+    #     if ans and ans.upper() not in ("NOTHING", "NONE", "UNKNOWN", "N/A") and len(ans) < 100:
+    #         cleaned = _domain_clean(ans, domain)
+    #         if cleaned:
+    #             return cleaned
+    # except Exception:
+    #     pass
 
     # Priority 1: Explicit "Final answer:" marker
     m = re.search(
