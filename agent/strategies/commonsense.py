@@ -55,7 +55,8 @@ def commonsense_strategy(question: str) -> str:
     if not answer:
         for line in reversed((raw or "").split("\n")):
             s = line.strip()
-            if s and (is_yn or not _is_boolean_answer(s)):
+            s = re.sub(r"^\d+[\)\.]\s*", "", s).strip().rstrip(".,;")
+            if s and len(s) > 2 and (is_yn or not _is_boolean_answer(s)): #no numbered lists
                 answer = s
                 break
 
