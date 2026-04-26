@@ -17,7 +17,7 @@ from agent.techniques.step_back import step_back
 from agent.techniques.cot import chain_of_thought
 from agent.techniques.self_refine import self_refine
 from agent.techniques.self_consistency import self_consistency
-from agent.extractor import extract_answer, extract_number
+from agent.extractor import pull_final_answer, last_numeric_token
 
 
 def _is_clean_number(s: str) -> bool:
@@ -67,7 +67,7 @@ def math_strategy(question: str) -> str:
     reset_call_count()
 
     raw_sb = step_back(question)
-    sb_answer = extract_answer(raw_sb, "math")
+    sb_answer = pull_final_answer(raw_sb, "math")
 
     # if step_back already gave a clean bare number, trust it and skip the 3
     # self-consistency calls — saves time and those samples drift to LaTeX anyway
@@ -77,8 +77,8 @@ def math_strategy(question: str) -> str:
     sc_answer = self_consistency(question, "math", n=3)
 
     # If both methods landed on the same number, we're confident
-    sb_num = extract_number(sb_answer)
-    sc_num = extract_number(sc_answer)
+    sb_num = last_numeric_token(sb_answer)
+    sc_num = last_numeric_token(sc_answer)
     if sb_num and sc_num and sb_num == sc_num and not _needs_second_pass(sb_answer, question):
         return sb_num
 
@@ -91,13 +91,13 @@ def math_strategy(question: str) -> str:
     if _looks_wrong(candidate) or _needs_second_pass(candidate, question):
         seed = candidate or sb_answer or sc_answer or raw_sb[:200]
         raw_ref = self_refine(question, seed, "math")
-        ref_answer = extract_answer(raw_ref, "math")
+        ref_answer = pull_final_answer(raw_ref, "math")
         if ref_answer and not _looks_wrong(ref_answer) and not _needs_second_pass(ref_answer, question):
             return ref_answer
 
         # nothing worked — try a plain CoT as last resort
         raw_cot = chain_of_thought(question, "math")
-        cot_answer = extract_answer(raw_cot, "math")
+        cot_answer = pull_final_answer(raw_cot, "math")
         if cot_answer and not _looks_wrong(cot_answer) and not _needs_second_pass(cot_answer, question):
             return cot_answer
 

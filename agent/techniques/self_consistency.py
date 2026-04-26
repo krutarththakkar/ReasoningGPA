@@ -10,7 +10,7 @@ import re
 from collections import Counter
 
 from agent.llm import call_llm
-from agent.extractor import extract_answer
+from agent.extractor import pull_final_answer
 
 _SYSTEM = (
     "You are a careful problem solver. "
@@ -74,7 +74,7 @@ def self_consistency(question: str, domain: str, n: int = 3) -> str:
         )
         if not raw:
             continue
-        ans = extract_answer(raw, domain)
+        ans = pull_final_answer(raw, domain)
         if not ans:
             continue
         key = _normalize(ans, domain)

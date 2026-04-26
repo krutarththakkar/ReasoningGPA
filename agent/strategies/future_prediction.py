@@ -17,6 +17,20 @@ _SYSTEM = (
     "and the options in the question. Do not refuse. End with one boxed answer."
 )
 
+_NUMERIC_WORDS = (
+    r"(\u591a\u5c11|price|index|rate|number|\u6570\u5b57|\u4ef7\u683c|"
+    r"\u6307\u6570|\u5e02\u503c|\u6536\u76d8\u4ef7|\u5f00\u76d8\u4ef7|"
+    r"\u5360\u6709\u7387|%|points?)"
+)
+
+_LIST_WORDS = (
+    r"(\u54ea\u51e0\u4e2a|\u54ea\u4e9b|\u662f\u8c01|\u540d\u79f0|"
+    r"\u540d\u5b57|\u6b4c\u66f2|\u7535\u5f71|\u8f66\u578b|"
+    r"\u89c6\u9891\u53f7|\u5feb\u624b\u53f7|\u9879\u76ee\u540d|"
+    r"names? only|give the names|who will be|ranked from|top\s*\d+|"
+    r"\u524d\s*\d+\s*\u540d)"
+)
+
 
 def future_prediction_strategy(question: str) -> str:
     reset_call_count()
@@ -85,33 +99,43 @@ def _question_type(question: str) -> str:
         return "options"
     if _asks_for_list(question):
         return "list"
-    if re.search(
-        r"(多少|price|index|rate|number|数字|价格|指数|市值|收盘价|开盘价|占有率|%|points?)",
-        question,
-        re.IGNORECASE,
-    ):
+    if re.search(_NUMERIC_WORDS, question, re.IGNORECASE):
         return "numeric"
     return "list"
 
 
 def _base_rate_prediction(question: str) -> str:
     q = question.lower()
-    if _question_type(question) == "options" and "number of" in q and "finish" in q:
+    qtype = _question_type(question)
+
+    if qtype == "yes_no":
+        return "['No']"
+
+    if qtype == "options" and "number of" in q and "finish" in q:
         letters = _option_letters(question)
         if letters:
             return _as_answer([letters[-1]], question)
+
+    if qtype == "options" and _looks_like_winner_market(q):
+        letters = _option_letters(question)
+        if letters:
+            return _as_answer([letters[0]], question)
+
     return ""
 
 
-def _asks_for_list(question: str) -> bool:
+def _looks_like_winner_market(q_lower: str) -> bool:
     return bool(
         re.search(
-            r"(哪几个|哪些|是谁|名称|名字|歌曲|电影|车型|视频号|快手号|项目名|"
-            r"names? only|give the names|who will be|ranked from|top\s*\d+|前\s*\d+\s*名)",
-            question,
-            re.IGNORECASE,
+            r"(which|who).{0,80}\bwin\b|\bwill win\b|\bwinner\b|\baward\b|"
+            r"\bbest new series\b|eisner",
+            q_lower,
         )
     )
+
+
+def _asks_for_list(question: str) -> bool:
+    return bool(re.search(_LIST_WORDS, question, re.IGNORECASE))
 
 
 def _format_prediction(raw: str, question: str = "") -> str:
@@ -153,7 +177,7 @@ def _content_to_answer(content: str, question: str) -> str:
     if number is not None and _question_type(question) == "numeric":
         return f"[{number}]"
 
-    parts = [p.strip().strip("'\"") for p in re.split(r"[,，、;；\n]+", content)]
+    parts = [p.strip().strip("'\"") for p in re.split(r"[,\uFF0C\u3001;\uFF1B\n]+", content)]
     return _as_answer([p for p in parts if p], question)
 
 

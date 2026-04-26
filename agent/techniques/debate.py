@@ -6,7 +6,7 @@ compares both traces and returns the final answer.
 """
 from __future__ import annotations
 
-from agent.extractor import extract_answer, normalize_for_grading
+from agent.extractor import pull_final_answer, normalize_for_grading
 from agent.llm import call_llm
 
 _SOLVER_SYSTEM = (
@@ -38,8 +38,8 @@ def debate(question: str, domain: str) -> str:
     raw_a = call_llm(prompt, system=_SOLVER_SYSTEM, temperature=0.7, max_tokens=600)
     raw_b = call_llm(prompt, system=_SOLVER_SYSTEM, temperature=0.7, max_tokens=600)
 
-    ans_a = extract_answer(raw_a, domain)
-    ans_b = extract_answer(raw_b, domain)
+    ans_a = pull_final_answer(raw_a, domain)
+    ans_b = pull_final_answer(raw_b, domain)
     if ans_a and not ans_b:
         return ans_a
     if ans_b and not ans_a:
@@ -57,4 +57,4 @@ def debate(question: str, domain: str) -> str:
         "Output the final answer only at the end as 'Final answer: <answer>'."
     )
     judged = call_llm(judge_prompt, system=_JUDGE_SYSTEM, temperature=0.0, max_tokens=500)
-    return extract_answer(judged, domain) or ans_a or ans_b
+    return pull_final_answer(judged, domain) or ans_a or ans_b

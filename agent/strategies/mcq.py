@@ -14,7 +14,7 @@ from agent.llm import reset_call_count
 from agent.techniques.few_shot import few_shot
 from agent.techniques.cot import chain_of_thought
 from agent.techniques.reflection import reflect
-from agent.extractor import extract_answer
+from agent.extractor import pull_final_answer
 
 
 def _is_letter(s: str) -> bool:
@@ -25,12 +25,12 @@ def mcq_strategy(question: str) -> str:
     reset_call_count()
 
     raw_fs = few_shot(question, "science_mcq")
-    fs_answer = extract_answer(raw_fs, "science_mcq")
+    fs_answer = pull_final_answer(raw_fs, "science_mcq")
     if _is_letter(fs_answer):
         return fs_answer.strip().upper()
 
     raw_cot = chain_of_thought(question, "science_mcq")
-    cot_answer = extract_answer(raw_cot, "science_mcq")
+    cot_answer = pull_final_answer(raw_cot, "science_mcq")
     if _is_letter(cot_answer):
         return cot_answer.strip().upper()
 

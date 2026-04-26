@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from agent.llm import reset_call_count
 from agent.techniques.few_shot import few_shot
-from agent.extractor import extract_answer
+from agent.extractor import pull_final_answer
 
 
 def true_false_strategy(question: str) -> str:
@@ -23,7 +23,7 @@ def true_false_strategy(question: str) -> str:
     reset_call_count()
 
     raw = few_shot(question, "true_false")
-    answer = extract_answer(raw, "true_false")
+    answer = pull_final_answer(raw, "true_false")
 
     # Normalize to Yes/No
     lower = (answer or "").lower().strip()

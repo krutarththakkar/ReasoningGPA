@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from agent.extractor import extract_answer, normalize_for_grading, extract_number
+from agent.extractor import pull_final_answer, normalize_for_grading, last_numeric_token
 
 # (raw_response, domain, expected_extraction)
 EXTRACTION_CASES = [
@@ -82,7 +82,7 @@ def run_extraction_tests():
     failures = []
 
     for raw, domain, expected in EXTRACTION_CASES:
-        got = extract_answer(raw, domain)
+        got = pull_final_answer(raw, domain)
         # Flexible check: expected should be in got or equal
         ok = (got.strip() == expected.strip() or
               expected.strip().lower() in got.strip().lower())
@@ -123,12 +123,12 @@ def run_number_tests():
     passed = 0
     failed = 0
     for inp, expected in NUMBER_CASES:
-        got = extract_number(inp)
+        got = last_numeric_token(inp)
         if got == expected:
             passed += 1
         else:
             failed += 1
-            print(f"  ❌ extract_number({inp!r}) = {got!r}, expected {expected!r}")
+            print(f"  ❌ last_numeric_token({inp!r}) = {got!r}, expected {expected!r}")
 
     print(f"\nNumber Extraction Tests: {passed}/{len(NUMBER_CASES)} passed")
     return failed

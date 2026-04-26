@@ -82,7 +82,7 @@ def resolve_hop(sub_question: str, context: str) -> str:
 def self_ask(question: str) -> str:
     """
     Full iterative Self-Ask pipeline.
-    Returns raw LLM synthesis text; pass through extract_answer() for cleaning.
+    Returns raw LLM synthesis text; pass through pull_final_answer() for cleaning.
     """
     # Phase 1: Decompose into sub-questions
     hops = decompose_hops(question)

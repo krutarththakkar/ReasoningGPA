@@ -11,7 +11,7 @@ Call budget: 1 call
 
 from __future__ import annotations
 from agent.llm import call_llm, reset_call_count
-from agent.extractor import extract_answer
+from agent.extractor import pull_final_answer
 
 _SYSTEM = (
     "You are a reading comprehension expert. "
@@ -37,4 +37,4 @@ def reading_comp_strategy(question: str) -> str:
     )
 
     raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=200)
-    return extract_answer(raw, "reading_comprehension")
+    return pull_final_answer(raw, "reading_comprehension")

@@ -1,5 +1,5 @@
 """
-Grader — determines if a prediction is correct.
+Grader - determines if a prediction is correct.
 
 Priority:
   1. Exact match after normalization (0 extra LLM calls)
@@ -10,10 +10,10 @@ Priority:
 from __future__ import annotations
 
 import re
-from agent.extractor import normalize_for_grading, extract_number
+from agent.extractor import normalize_for_grading, last_numeric_token
 
 
-def grade(
+def mark_prediction(
     question: str,
     prediction: str,
     expected: str,
@@ -27,7 +27,7 @@ def grade(
     if not prediction:
         return False
 
-    # Coding path — skips trivia normalizations that destroy Python syntax
+    # Coding path - skips trivia normalizations that destroy Python syntax
     if domain == "coding":
         if prediction.strip() == expected.strip():
             return True
@@ -36,13 +36,13 @@ def grade(
             return self_evaluate(question, prediction, expected, domain="coding")
         return False
 
-    # Strict numeric path — used for math and any expected answer that is just
+    # Strict numeric path - used for math and any expected answer that is just
     # a number. Skips the LLM judge (which hallucinates on long AIME questions)
-    # and skips substring match (which wrongly says "2" in "112" → True).
+    # and skips substring match (which wrongly says "2" in "112" -> True).
     expected_is_numeric = bool(re.fullmatch(r"\s*-?\d+(?:\.\d+)?\s*", str(expected or "")))
     if domain == "math" or expected_is_numeric:
-        pn = extract_number(prediction)
-        en = extract_number(expected)
+        pn = last_numeric_token(prediction)
+        en = last_numeric_token(expected)
         return pn is not None and en is not None and pn == en
 
     # Normalize once
@@ -60,8 +60,8 @@ def grade(
         return True
 
     # 2. Numeric match
-    pred_num = extract_number(prediction)
-    exp_num  = extract_number(expected)
+    pred_num = last_numeric_token(prediction)
+    exp_num  = last_numeric_token(expected)
     if pred_num is not None and exp_num is not None and pred_num == exp_num:
         return True
 

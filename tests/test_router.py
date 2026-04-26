@@ -137,8 +137,13 @@ TEST_CASES = [
 
     # --- Dev-data domains (coding / planning / future_prediction) ---
     ("Retrieves names. The function should output list. Write self-contained code starting with def task_func(user):", "coding"),
+    ("Write a function to find the shared elements from the given two lists.", "coding"),
     ("I am playing with a set of objects. Here are the actions I can do", "planning"),
     ("You are an agent that can predict future events. \\boxed{YOUR_PREDICTION}", "future_prediction"),
+    (
+        "24-Game Challenge: Numbers: 1, 1, 1, 8. Use each number exactly once with +, -, *, / and parentheses to form an expression that equals 24.",
+        "expression_puzzle",
+    ),
 ]
 
 

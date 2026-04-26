@@ -3,7 +3,7 @@ Domain router — classifies questions into domains using heuristics only.
 0 LLM calls. >> fast and deterministic.
 
 Domains: math, word_problem, reading_comprehension, science_mcq,
-         logic, true_false, commonsense
+         logic, true_false, commonsense, expression_puzzle
 """
 
 from __future__ import annotations
@@ -56,10 +56,18 @@ _MATH_KEYWORDS = [
     r"\bcongruent\b", r"\bsimilar\b", r"\bparallel\b", r"\bperpendicular\b",
     r"\bmedian\b", r"\baltitude\b", r"\bbisector\b", r"\bincircle\b",
     r"\bcircumscribed\b", r"\binscribed\b", r"\btangent\b", r"\bchord\b",
+    r"\brectangular prism\b", r"\bparallelepiped\b",
+    r"\bpascal's triangle\b",
+    r"\bproper divisor\b", r"\bnatural number\b",
+    r"\bdifference of the squares\b",
+    r"\bclosed lockers\b",
+    r"\bescalator\b",
     r"\bparabola\b", r"\bellipse\b", r"\bhyperbola\b",
     r"\bfind\s+\w+\s+if\b", r"\bcompute\b", r"\bevaluate\b",
     # "how many X" where X is a math object (integers, primes, etc.)
     r"\bhow many\s+(even|odd|prime|positive|negative|distinct|different)\b",
+    r"\bhow many\s+of\s+the\s+integers\b",
+    r"\bhow many\s+such\b.*\bpossible\b",
     r"\bhow many\s+\w+\s+(between|less than|greater than|from \d)\b",
     r"\bfind the (number|sum|product|area|volume|length|distance|angle|probability)\b",
 ]
@@ -107,6 +115,8 @@ _WORD_PROBLEM_PATTERNS = [
     r"\bdiscount\b",
     r"\bcommission\b",
     r"\ballowance\b",
+    r"\bescalator\b.*\bsteps\b",
+    r"\bworkers?\b.*\bschedule\b",
 ]
 
 # Logic puzzle patterns — state tracking, swapping, ordering
@@ -126,7 +136,6 @@ _LOGIC_PATTERNS = [
 
 # Commonsense signals -> questions about similarity, recommendations, plausibility
 _COMMONSENSE_SIGNALS = [
-    r"\bsimilar\s+to\b",
     r"\bfind\s+a\s+movie\b",
     r"\bmost\s+likely\b",
     r"\bbest\s+describes\b",
@@ -163,6 +172,16 @@ _CODING_MARKERS = [
     r"self-contained code starting",
     r"The function should output",
     r"def\s+task_func",
+    r"\bwrite a function\b",
+    r"\bwrite a python function\b",
+    r"\bcreate a function\b",
+    r"\bimplement (?:a|an|the) function\b",
+    r"\bfunction to\b",
+    r"\bfunction that\b",
+    r"\bgiven as a list of lists\b",
+    r"\breturn (?:a|an|the)?\s*(?:list|tuple|dict|dictionary|set|string|integer|boolean|dataframe)\b",
+    r"\bDataFrame\b",
+    r"\bimport\s+(?:pandas|numpy|matplotlib|re|os|json|collections|itertools)\b",
 ]
 _PLANNING_MARKERS = [
     r"Here are the actions I can do",
@@ -173,6 +192,12 @@ _PLANNING_MARKERS = [
 _FUTURE_PREDICTION_MARKERS = [
     r"agent that can predict future events",
     r"\\boxed\{YOUR_PREDICTION\}",
+]
+_EXPRESSION_PUZZLE_MARKERS = [
+    r"\b\d+-Game Challenge\b",
+    r"\b\d+\s*Game\b",
+    r"Numbers?\s*:\s*(?:-?\d+\s*,\s*){3}-?\d+.*\buse each number exactly once\b",
+    r"\buse each number exactly once\b.*\b(?:equals?|make|form)\b.*\d+",
 ]
 
 
@@ -221,13 +246,18 @@ def detect_domain(question: str) -> str:
     """
     Classify question into one of the supported domains using deterministic
     heuristics only.
-    Returns: coding | planning | future_prediction | math | word_problem |
-             reading_comprehension | science_mcq | logic | true_false | commonsense
+    Returns: coding | planning | future_prediction | expression_puzzle | math |
+             word_problem | reading_comprehension | science_mcq | logic |
+             true_false | commonsense
     """
     q = question.strip()
     q_lower = q.lower()
 
-    # Check the three dev-data domains first — their markers are very specific
+    # Check the structured task domains first; their markers are specific and
+    # should not be swallowed by broad math/common-sense heuristics.
+    for pat in _EXPRESSION_PUZZLE_MARKERS:
+        if re.search(pat, q, re.IGNORECASE):
+            return "expression_puzzle"
     for pat in _FUTURE_PREDICTION_MARKERS:
         if re.search(pat, q, re.IGNORECASE):
             return "future_prediction"
@@ -277,8 +307,14 @@ def detect_domain(question: str) -> str:
     if _has_math_dollar_span(q) or _has_competition_math_signal(q):
         return "math"
 
+    if any(re.search(pat, q) for pat in _LATEX_PATTERNS):
+        return "math"
+
     if _looks_multilingual_word_problem(q):
         return "word_problem"
+
+    if any(re.search(pat, q_lower) for pat in _MATH_KEYWORDS):
+        return "math"
 
     word_problem_hits = sum(
         1 for pat in _WORD_PROBLEM_PATTERNS
@@ -290,15 +326,6 @@ def detect_domain(question: str) -> str:
         return "word_problem"
     if word_problem_hits >= 2:
         return "word_problem"
-
-    # Math (LaTeX or math keywords)
-    for pat in _LATEX_PATTERNS:
-        if re.search(pat, q):
-            return "math"
-
-    for pat in _MATH_KEYWORDS:
-        if re.search(pat, q_lower):
-            return "math"
 
     # Single strong word problem signal (after math check)
     if word_problem_hits >= 1:

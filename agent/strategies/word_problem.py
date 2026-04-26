@@ -13,7 +13,7 @@ from agent.llm import reset_call_count
 from agent.techniques.decompose import decompose
 from agent.techniques.cot import chain_of_thought
 from agent.techniques.reflection import reflect
-from agent.extractor import extract_answer, extract_number
+from agent.extractor import pull_final_answer, last_numeric_token
 
 
 def _is_multilingual(question: str) -> bool:
@@ -29,13 +29,13 @@ def word_problem_strategy(question: str) -> str:
         q = question + "\n\n(Note: Understand the question in its original language and compute the numeric answer.)"
 
     raw_d = decompose(q)
-    decomp_answer = extract_answer(raw_d, "word_problem")
+    decomp_answer = pull_final_answer(raw_d, "word_problem")
 
     raw_c = chain_of_thought(q, "word_problem")
-    cot_answer = extract_answer(raw_c, "word_problem")
+    cot_answer = pull_final_answer(raw_c, "word_problem")
 
-    d_num = extract_number(decomp_answer)
-    c_num = extract_number(cot_answer)
+    d_num = last_numeric_token(decomp_answer)
+    c_num = last_numeric_token(cot_answer)
     if d_num and c_num and d_num == c_num:
         return d_num
 

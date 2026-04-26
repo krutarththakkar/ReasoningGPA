@@ -13,6 +13,7 @@ from agent.strategies.commonsense import commonsense_strategy
 from agent.strategies.coding import coding_strategy
 from agent.strategies.planning import planning_strategy
 from agent.strategies.future_prediction import future_prediction_strategy
+from agent.strategies.expression_puzzle import expression_puzzle_strategy
 
 _REGISTRY = {
     "math":                   math_strategy,
@@ -30,6 +31,7 @@ _REGISTRY = {
     "coding":                 coding_strategy,
     "planning":               planning_strategy,
     "future_prediction":      future_prediction_strategy,
+    "expression_puzzle":      expression_puzzle_strategy,
 }
 
 

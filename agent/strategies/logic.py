@@ -11,7 +11,7 @@ from __future__ import annotations
 from agent.llm import call_llm, reset_call_count
 from agent.techniques.debate import debate
 from agent.techniques.self_consistency import self_consistency
-from agent.extractor import extract_answer
+from agent.extractor import pull_final_answer
 
 _SYSTEM = (
     "You are a careful logical reasoner. "
@@ -39,4 +39,4 @@ def logic_strategy(question: str) -> str:
     )
 
     raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=500)
-    return extract_answer(raw, "logic")
+    return pull_final_answer(raw, "logic")

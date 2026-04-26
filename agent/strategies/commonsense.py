@@ -8,7 +8,7 @@ import re
 from agent.llm import reset_call_count
 from agent.techniques.cot import chain_of_thought
 from agent.techniques.debate import debate
-from agent.extractor import extract_answer
+from agent.extractor import pull_final_answer
 
 # Yes/No confirmation questions start with these words
 _YES_NO_PATTERN = re.compile(
@@ -47,7 +47,7 @@ def _should_debate(question: str) -> bool:
 
 
 def _extract_with_guard(raw: str, question: str, is_yn: bool) -> str:
-    answer = extract_answer(raw, "commonsense")
+    answer = pull_final_answer(raw, "commonsense")
 
     if answer and _is_boolean_answer(answer) and not is_yn:
         answer = ""

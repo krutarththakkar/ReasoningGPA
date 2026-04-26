@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from agent import agent_loop
 from agent import llm
 from agent.router import detect_domain
-from eval.grader import grade
+from eval.grader import mark_prediction
 
 DEV_PATH     = Path("cse476_final_project_dev_data.json")
 TEST_PATH    = Path("cse_476_final_project_test_data.json")
@@ -225,7 +225,7 @@ def run_eval(
 
         elapsed = time.time() - t0
 
-        is_correct = grade(question, prediction, expected, use_llm_judge=use_llm_judge, domain=domain)
+        is_correct = mark_prediction(question, prediction, expected, use_llm_judge=use_llm_judge, domain=domain)
 
         domain_stats[domain]["total"] += 1
         if is_correct:
@@ -294,7 +294,7 @@ def print_summary(summary: dict) -> None:
     print("=" * 65)
 
 
-def main():
+def eval_cli():
     parser = argparse.ArgumentParser(description="Evaluate the reasoning agent on dev data")
     parser.add_argument("--n",           type=int,  default=None,  help="Number of questions")
     parser.add_argument("--start",       type=int,  default=0,     help="Start index")
@@ -365,4 +365,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    eval_cli()

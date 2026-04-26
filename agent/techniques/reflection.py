@@ -7,7 +7,7 @@ works on any domain and just asks "is this correct, and if not, fix it."
 from __future__ import annotations
 
 from agent.llm import call_llm
-from agent.extractor import extract_answer
+from agent.extractor import pull_final_answer
 
 _SYSTEM = (
     "You are a careful reviewer. "
@@ -25,4 +25,4 @@ def reflect(question: str, initial_answer: str, domain: str) -> str:
         "Think carefully and state 'Final answer: <answer>' at the end."
     )
     raw = call_llm(prompt, system=_SYSTEM, temperature=0.0, max_tokens=500)
-    return extract_answer(raw, domain)
+    return pull_final_answer(raw, domain)

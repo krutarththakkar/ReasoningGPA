@@ -28,7 +28,7 @@ _HEADER_WORDS = {
 }
 
 
-def extract_answer(raw: str, domain: str) -> str:
+def pull_final_answer(raw: str, domain: str) -> str:
     """
     Extract a clean final answer from raw LLM output.
     Returns the best candidate answer string.
@@ -232,7 +232,7 @@ def normalize_for_grading(answer: str) -> str:
     return s
 
 
-def extract_number(s: str) -> str | None:
+def last_numeric_token(s: str) -> str | None:
     """Extract the number from a string."""
     if not s:
         return None

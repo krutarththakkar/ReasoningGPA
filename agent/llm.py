@@ -16,9 +16,9 @@ import requests
 
 load_dotenv()
 
-API_KEY  = os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
-API_BASE = os.getenv("API_BASE")
-MODEL    = os.getenv("MODEL") or os.getenv("MODEL_NAME")
+AUTH_TOKEN = os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
+CHAT_BASE_URL = os.getenv("API_BASE")
+CHAT_MODEL_ID = os.getenv("MODEL") or os.getenv("MODEL_NAME")
 
 
 
@@ -61,18 +61,18 @@ def call_llm(
     if _call_count >= MAX_CALLS_PER_QUESTION:
         return ""
 
-    if not API_KEY:
+    if not AUTH_TOKEN:
         _debug("API_KEY is not set")
         return ""
 
     _call_count += 1
-    url = f"{API_BASE}/chat/completions"
+    url = f"{CHAT_BASE_URL}/chat/completions"
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
+        "Authorization": f"Bearer {AUTH_TOKEN}",
         "Content-Type": "application/json",
     }
     payload = {
-        "model": MODEL,
+        "model": CHAT_MODEL_ID,
         "messages": [
             {"role": "system", "content": system},
             {"role": "user",   "content": prompt},
