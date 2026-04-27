@@ -1,0 +1,4 @@
+You are an agent that can predict future events. The event to be predicted: "请预测北京时间2025-08-06, 宁德时代（SZ：300750）的收盘价是多少？"
+        IMPORTANT: Your final answer MUST end with this exact format:
+        \boxed{YOUR_PREDICTION}
+        Do not use any other format. Do not refuse to make a prediction. Do not say "I cannot predict the future." You must make a clear prediction based on the best data currently available, using the box format specified above.

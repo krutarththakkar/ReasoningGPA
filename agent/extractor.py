@@ -118,9 +118,8 @@ def pull_final_answer(raw: str, domain: str) -> str:
         if len(last) < 150:
             return _domain_clean(last, domain)
 
-    # Fallback: truncate raw
-    return text[:200]
-
+    # Fallback
+    return ""
 
 def _domain_specific(text: str, domain: str) -> str:
     """Domain-specific extraction patterns."""
@@ -165,15 +164,18 @@ def _domain_specific(text: str, domain: str) -> str:
 
 def _domain_clean(candidate: str, domain: str) -> str:
     """Clean up a candidate answer based on domain expectations."""
+    # Strip surrounding markdown (asterisks, underscores)
+    candidate = re.sub(r"^[\*_]+(.*?)([\*_]+)?$", r"\1", candidate.strip()).strip()
 
     if domain in ("science_mcq", "logic"):
         # If it starts with a letter + period/paren, extract just the letter
-        m = re.match(r"^([A-D])[\.\)\s]", candidate)
+        m = re.match(r"^\(?([A-D])\)?[\.\)\s]", candidate)
         if m:
             return m.group(1).upper()
-        # If it's just a letter
-        if re.match(r"^[A-D]$", candidate.strip()):
-            return candidate.strip().upper()
+        # If it's just a letter or (Letter)
+        m = re.match(r"^\(?([A-D])\)?$", candidate.strip())
+        if m:
+            return m.group(1).upper()
 
     if domain == "true_false":
         lower = candidate.lower().strip()

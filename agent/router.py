@@ -288,13 +288,13 @@ def detect_domain(question: str) -> str:
             return "logic"
 
     # Science MCQ (A/B/C/D options + science keywords)
-    has_abcd = bool(re.search(r"\bA\.\s|\bB\.\s|\bC\.\s|\bD\.\s", q))
+    has_abcd = bool(re.search(r"\b[A-D]\.\s|\([A-D]\)\s", q))
     if has_abcd:
         words = set(q_lower.split())
         if words & _SCIENCE_KEYWORDS:
             return "science_mcq"
         # MCQ without science keywords → still MCQ
-        if re.search(r"\bA\.\s.+\bB\.\s.+\bC\.\s.+\bD\.\s", q, re.DOTALL):
+        if re.search(r"(?:\bA\.\s|\(A\)\s).+(?:\bB\.\s|\(B\)\s).+(?:\bC\.\s|\(C\)\s).+(?:\bD\.\s|\(D\)\s)", q, re.DOTALL):
             return "science_mcq"
 
     # Commonsense signals -> check AFTER MCQ to avoid misclassification

@@ -20,7 +20,7 @@ OUTPUT_PATH = Path("cse_476_final_project_answers.json")
 
 
 def load_questions(path: Path) -> List[Dict[str, Any]]:
-    with path.open("r") as fp:
+    with path.open("r", encoding="utf-8") as fp:
         data = json.load(fp)
     if not isinstance(data, list):
         raise ValueError("Input file must contain a list of question objects.")
@@ -31,10 +31,9 @@ def build_answers(questions: List[Dict[str, Any]]) -> List[Dict[str, str]]:
     answers: List[Dict[str, str]] = []
     total = len(questions)
     for idx, question in enumerate(questions):
-        if total > 100 and (idx + 1) % 100 == 0:
-            print(f"  progress {idx + 1}/{total}", flush=True)
         text = agent_loop(question["input"])
         answers.append({"output": text})
+        print(f"Completed question {idx + 1}/{total}", flush=True)
     return answers
 
 
@@ -60,13 +59,13 @@ def validate_results(
 
 
 def main() -> None:
-    questions = load_questions(INPUT_PATH)
+    questions = load_questions(INPUT_PATH)[:10]
     answers = build_answers(questions)
 
-    with OUTPUT_PATH.open("w") as fp:
+    with OUTPUT_PATH.open("w", encoding="utf-8") as fp:
         json.dump(answers, fp, ensure_ascii=False, indent=2)
 
-    with OUTPUT_PATH.open("r") as fp:
+    with OUTPUT_PATH.open("r", encoding="utf-8") as fp:
         saved_answers = json.load(fp)
     validate_results(questions, saved_answers)
     print(
@@ -77,4 +76,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
