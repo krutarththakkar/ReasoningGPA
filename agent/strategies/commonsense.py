@@ -61,7 +61,7 @@ def _extract_with_guard(raw: str, question: str, is_yn: bool) -> str:
         for line in reversed((raw or "").split("\n")):
             s = line.strip()
             s = re.sub(r"^\d+[\)\.]\s*", "", s).strip().rstrip(".,;")
-            if s and len(s) > 2 and (is_yn or not _is_boolean_answer(s)): #no numbered lists
+            if s and len(s) > 2 and len(s) < 120 and (is_yn or not _is_boolean_answer(s)): #no numbered lists
                 answer = s
                 break
 
