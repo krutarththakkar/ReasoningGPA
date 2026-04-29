@@ -66,6 +66,23 @@ A curated list of foundational papers and talks on LLM reasoning and agents:
 
 All well within the 20-call limit.
 
+## How to Run the Evaluation
+
+Steps to evaluate your agent on the dev questions:
+
+```bash
+
+# Run the evaluation on the dev questions
+python generate_answer_template.py
+```
+
+This will:
+
+1. Load the 6208 dev questions
+2. Run your agent and generate answers
+
+Then, you can see how your agent performs.
+
 ## Files
 
 ```
