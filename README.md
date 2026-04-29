@@ -44,25 +44,25 @@ A curated list of foundational papers and talks on LLM reasoning and agents:
 
 ## Strategy per Domain
 
-| Domain                  | Strategy                                                              |
-| ----------------------- | --------------------------------------------------------------------- |
-| `math`                  | Step-Back → Self-Consistency (3 samples) → Reflection if disagreement |
-| `word_problem`          | Decomposition + CoT → Reflection if disagreement                      |
-| `reading_comprehension` | Few-Shot + CoT                                                        |
-| `science_mcq`           | Few-Shot + CoT → Reflection for letter extraction                     |
-| `logic`                 | Self-Consistency (3 samples) → CoT fallback                           |
-| `true_false`            | Few-Shot + CoT                                                        |
-| `commonsense`           | Decomposition → Verification → Reflection if unverified               |
+| Domain                  | Strategy                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------- |
+| `math`                  | Step-Back → Self-Consistency (3 samples) → Self-Refine if needed → CoT fallback |
+| `word_problem`          | Decomposition + CoT in parallel → Reflection if they disagree                   |
+| `reading_comprehension` | Single tight extraction prompt (1 call)                                         |
+| `science_mcq`           | Few-Shot → CoT → Reflection for letter extraction                               |
+| `logic`                 | Debate (2 solvers + judge) → Self-Consistency (3 samples) → CoT fallback        |
+| `true_false`            | Few-Shot (1 call)                                                               |
+| `commonsense`           | CoT → Debate fallback for option-style questions → Verify + Reflection          |
 
 ## LLM Call Budget
 
-- Math: ~5–6 calls (1 classify + 1 step-back + 3 self-consistency + 1 reflect)
-- Word problem: ~4 calls (1 classify + 1 decompose + 1 CoT + 1 reflect)
-- Reading comprehension: ~3 calls (1 classify + 1 few-shot + 1 CoT)
-- Science MCQ: ~3–4 calls
-- Logic: ~4 calls
-- True/False: ~3 calls
-- Commonsense: ~3–4 calls
+- Math: 1 or 5 calls (1 step-back -> if needed, 3 self-consistency -> self-refine -> CoT)
+- Word problem: ~2-3 calls (1 decompose + 1 CoT -> 1 reflect only if disagree)
+- Reading comprehension: 1 call (single extract prompt)
+- Science MCQ: ~1–3 calls (1 few shot -> 1 CoT if no letter -> 1 reflect if still no letter)
+- Logic: ~2-6 calls (1 debate: 1 solver A + 1 solver B + 1 judge -> 3 self-consistency -> CoT fallback)
+- True/False: ~1 call (few shot only)
+- Commonsense: ~1–4 calls (1 CoT -> debate: 1 solver A + 1 solver B + 1 judge for option-style -> 1 reflect)
 
 All well within the 20-call limit.
 
@@ -90,7 +90,7 @@ agent/llm.py                          # Main agent implementation
 generate_answer_template.py           # Submission runner
 eval/run_eval.py                      # Dev set evaluation script
 requirements.txt                      # Python dependencies
-cse476_final_project_dev_data.json    # Dev data (1000 questions with answers)
+cse476_final_project_dev_data.json    # Dev data
 cse_476_final_project_test_data.json  # Test data (no answers)
 cse_476_final_project_answers.json    # Output answers (generated)
 ```
