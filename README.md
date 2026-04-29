@@ -18,19 +18,20 @@ LLM_DEBUG=0
 
 ## Agent Architecture
 
-The agent aims to implement 9 inference-time techniques:
+The agent implements 10 inference-time techniques:
 
-| #   | Technique                       | Description                                                                                                                                       |
-| --- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Domain-Aware Routing**        | Classifies question type (math, word_problem, reading_comprehension, science_mcq, logic, commonsense, true_false) and routes to the best strategy |
-| 2   | **Chain-of-Thought (CoT)**      | Step-by-step reasoning with explicit "Final answer:" extraction                                                                                   |
-| 3   | **Self-Consistency**            | Samples 3 answers at temperature=0.7, returns majority vote (math, logic)                                                                         |
-| 4   | **Step-Back Prompting**         | Derives relevant mathematical principles first, then solves (hard math)                                                                           |
-| 5   | **Least-to-Most Decomposition** | Breaks multi-step word problems into sub-problems                                                                                                 |
-| 6   | **Few-Shot Exemplars**          | Injects domain-specific in-context examples                                                                                                       |
-| 7   | **Reflection / Self-Critique**  | Re-examines initial answer and corrects if needed                                                                                                 |
-| 8   | **Verification Pass**           | Checks whether the answer satisfies question constraints                                                                                          |
-| 9   | **Answer Extraction**           | Post-processes raw LLM output to return a clean final answer                                                                                      |
+| #   | Technique                       | Description                                                                                                                                                                              |
+| --- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Domain-Aware Routing**        | Classifies question type (math, word_problem, reading_comprehension, science_mcq, logic, commonsense, true_false, coding, planning, expression_puzzle, future_prediction) via heuristics |
+| 2   | **Chain-of-Thought (CoT)**      | Step-by-step reasoning with explicit "Final answer:" extraction                                                                                                                          |
+| 3   | **Self-Consistency**            | Samples 3 answers at temperature=0.7, returns majority vote (math, logic)                                                                                                                |
+| 4   | **Step-Back Prompting**         | Derives relevant mathematical principles first, then solves; used as primary call for all math questions                                                                                 |
+| 5   | **Least-to-Most Decomposition** | Breaks multi-step word problems into sub-problems                                                                                                                                        |
+| 6   | **Few-Shot Exemplars**          | Injects domain-specific in-context examples (science_mcq, true_false)                                                                                                                    |
+| 7   | **Reflection / Self-Critique**  | Re-examines initial answer and corrects if needed (word_problem, science_mcq)                                                                                                            |
+| 8   | **Self-Refine**                 | Checks and corrects a math answer when it looks wrong (e.g. expression instead of number); math only                                                                                     |
+| 9   | **Debate**                      | Two independent solver agents answer the question; a judge picks the better answer if they disagree (logic, commonsense)                                                                 |
+| 10  | **Answer Extraction**           | Post-processes raw LLM output to return a clean final answer                                                                                                                             |
 
 ## Recommended Reading
 
